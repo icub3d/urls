@@ -1,4 +1,5 @@
 gourl
 =====
 
-A URL shortener web application written to show-off concurrency in Go.
+A URL shortener framework written in Go. An implementation is
+available for Google App Engine as well.
