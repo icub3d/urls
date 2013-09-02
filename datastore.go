@@ -1,25 +1,27 @@
 package urls
 
+// DataStore is the interface that any backend datastore should
+// implement to be compatible with the handlers.
 type DataStore interface {
 	// Get the total count of Urls in the system.
-	CountUrls() (int, error)
+	CountURLs() (int, error)
 
 	// Get the next limit urls order by create date (newest first) and offset by the
 	// given offset.
-	GetUrls(limit, offset int) ([]*Url, error)
+	GetURLs(limit, offset int) ([]*URL, error)
 
 	// Get the url with the given short id.
-	GetUrl(short string) (*Url, error)
+	GetURL(short string) (*URL, error)
 
 	// Remove the given url and it's associated logs and statistics.
-	DeleteUrl(short string) error
+	DeleteURL(short string) error
 
 	// Put the given url into the data store. If the short id exists,
 	// overwrite it. Otherwise insert a new entry. When inserting, the
 	// new short ID should be updated before insertion and it should be
 	// returned. You can use the helper functions IntToShort to help
 	// convert a unique integer to a representative string.
-	PutUrl(url *Url) (string, error)
+	PutURL(url *URL) (string, error)
 
 	// Get the statistics for the given short id.
 	GetStatistics(short string) (*Statistics, error)

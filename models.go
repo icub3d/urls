@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Url is a representation of a shortened URL.
-type Url struct {
+// URL is a representation of a shortened URL.
+type URL struct {
 	// The shortened ID.
 	Short string
 
@@ -21,10 +21,10 @@ type Url struct {
 	Clicks int
 }
 
-// NewUrl creates a new url with the currend time and 0 clicks. The
+// NewURL creates a new url with the currend time and 0 clicks. The
 // shortened url is not set.
-func NewUrl(long string) *Url {
-	return &Url{
+func NewURL(long string) *URL {
+	return &URL{
 		Long:    long,
 		Created: time.Now(),
 	}

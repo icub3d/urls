@@ -41,7 +41,7 @@ func GetUrls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the data.
-	u, err := DS.GetUrls(limit, offset)
+	u, err := DS.GetURLs(limit, offset)
 	if err != nil {
 		log.Printf("GetUrls(%v, %v) failed with: %v", limit, offset, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -70,7 +70,7 @@ func GetUrls(w http.ResponseWriter, r *http.Request) {
 // you are checking those (and you probably should), you can wrap this
 // handler in another handler.
 func CountUrls(w http.ResponseWriter, r *http.Request) {
-	c, err := DS.CountUrls()
+	c, err := DS.CountURLs()
 	if err != nil {
 		log.Printf("CountUrls() failed with: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -86,9 +86,6 @@ func CountUrls(w http.ResponseWriter, r *http.Request) {
 // Expects POST data to be JSON of *Url without a short ID.
 // The short ID will be blanked and a time will be created.
 // returns *Url as JSON with fixed short ID
-
-// TODO implement GetUrl GET /urls/{id}
-// returns *Url as JSON if one is found or 404 not found.
 
 // TODO implement DeleteUrl DELETE /urls/{id}
 // returns 200 OK or 404 Not Found
@@ -115,7 +112,7 @@ func CountUrls(w http.ResponseWriter, r *http.Request) {
 func Redirect(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
-	u, err := DS.GetUrl(id)
+	u, err := DS.GetURL(id)
 	if err != nil {
 		if err != nil {
 			log.Printf("GetUrl(%v) failed with: %v", id, err)

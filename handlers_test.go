@@ -76,7 +76,7 @@ func TestGetUrls(t *testing.T) {
 		// TODO not sure how for force a Marshal error at this point.
 	}
 
-	a := datastore.UrlsArray()
+	a := datastore.URLsArray()
 	for k, test := range tests {
 		if test.err != nil {
 			datastore.SetError(test.err, test.when)
@@ -215,7 +215,7 @@ func TestRedirect(t *testing.T) {
 
 func prep() {
 	datastore = &mds{
-		urls:  make(map[string]*Url),
+		urls:  make(map[string]*URL),
 		stats: make(map[string]*Statistics),
 		logs:  make(map[string][]*Log),
 	}
@@ -224,14 +224,14 @@ func prep() {
 
 	// Add a set of urls.
 	for x := 0; x < 200; x++ {
-		u := &Url{
+		u := &URL{
 			Short:   IntToShort(x),
 			Long:    "http://longurl.com/" + strconv.Itoa(x) + ".html",
 			Created: t.AddDate(0, 0, -x),
 			Clicks:  x,
 		}
 
-		datastore.PutUrl(u)
+		datastore.PutURL(u)
 	}
 
 	DS = datastore
@@ -239,7 +239,7 @@ func prep() {
 
 // mds implements a DataStore in memory suitable for testing.
 type mds struct {
-	urls  map[string]*Url
+	urls  map[string]*URL
 	stats map[string]*Statistics
 	logs  map[string][]*Log
 	err   error
@@ -270,8 +270,8 @@ func (ds *mds) error() error {
 	return nil
 }
 
-// Implement the Url parts.
-func (ds *mds) CountUrls() (int, error) {
+// Implement the URL parts.
+func (ds *mds) CountURLs() (int, error) {
 	if err := ds.error(); err != nil {
 		return 0, err
 	}
@@ -279,7 +279,7 @@ func (ds *mds) CountUrls() (int, error) {
 	return len(ds.urls), nil
 }
 
-func (ds *mds) UrlsArray() []*Url {
+func (ds *mds) URLsArray() []*URL {
 	// Get an array of the urls
 	u := surls{}
 	for _, v := range ds.urls {
@@ -291,15 +291,15 @@ func (ds *mds) UrlsArray() []*Url {
 	return u
 }
 
-func (ds *mds) GetUrls(limit, offset int) ([]*Url, error) {
+func (ds *mds) GetURLs(limit, offset int) ([]*URL, error) {
 	if err := ds.error(); err != nil {
 		return nil, err
 	}
 
-	u := ds.UrlsArray()
+	u := ds.URLsArray()
 
 	if offset > len(u) {
-		return []*Url{}, nil
+		return []*URL{}, nil
 	}
 
 	if offset+limit > len(u) {
@@ -311,7 +311,7 @@ func (ds *mds) GetUrls(limit, offset int) ([]*Url, error) {
 	return u[offset:limit], nil
 }
 
-func (ds *mds) GetUrl(short string) (*Url, error) {
+func (ds *mds) GetURL(short string) (*URL, error) {
 	if err := ds.error(); err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (ds *mds) GetUrl(short string) (*Url, error) {
 		return nil, nil
 	}
 
-	return &Url{
+	return &URL{
 		Short:   got.Short,
 		Long:    got.Long,
 		Created: got.Created,
@@ -329,7 +329,7 @@ func (ds *mds) GetUrl(short string) (*Url, error) {
 	}, nil
 }
 
-func (ds *mds) PutUrl(url *Url) (string, error) {
+func (ds *mds) PutURL(url *URL) (string, error) {
 	if err := ds.error(); err != nil {
 		return "", err
 	}
@@ -341,7 +341,7 @@ func (ds *mds) PutUrl(url *Url) (string, error) {
 		url.Short = id
 	}
 
-	ds.urls[url.Short] = &Url{
+	ds.urls[url.Short] = &URL{
 		Short:   url.Short,
 		Long:    url.Long,
 		Created: url.Created,
@@ -351,7 +351,7 @@ func (ds *mds) PutUrl(url *Url) (string, error) {
 	return url.Short, nil
 }
 
-func (ds *mds) DeleteUrl(short string) error {
+func (ds *mds) DeleteURL(short string) error {
 	if err := ds.error(); err != nil {
 		return err
 	}
@@ -428,7 +428,7 @@ func (ds *mds) GetLogs(short string, limit, offset int) ([]*Log, error) {
 }
 
 // These are sort helpers for the url and logs.
-type surls []*Url
+type surls []*URL
 
 func (s surls) Len() int {
 	return len(s)
