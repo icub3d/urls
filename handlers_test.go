@@ -87,7 +87,7 @@ func TestGetUrls(t *testing.T) {
 			fmt.Sprintf("http://localhost/admin/urls?limit=%v&offset=%v",
 				test.limit, test.offset), nil)
 
-		GetUrls(w, r)
+		GetURLs(w, r)
 
 		enc, _ := json.Marshal(a[test.start:test.end])
 
@@ -133,13 +133,118 @@ func TestCountUrls(t *testing.T) {
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://localhost/admin/count/urls", nil)
 
-		CountUrls(w, r)
+		CountURLs(w, r)
 
 		body := w.Body.String()
 
 		if test.expected != body {
 			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
 				k, test.expected, body)
+		}
+	}
+}
+
+func TestDeleteURL(t *testing.T) {
+	prep()
+
+	tests := []struct {
+		id       string
+		code     int
+		expected string
+		err      error
+		when     int
+	}{
+		// Test a normal delete.
+		{
+			id:       "1c",
+			code:     http.StatusOK,
+			expected: ``,
+		},
+
+		// Test an error
+		{
+			id:       "1d",
+			code:     http.StatusInternalServerError,
+			expected: `oops`,
+			err:      fmt.Errorf("failure"),
+			when:     1,
+		},
+	}
+
+	for k, test := range tests {
+		if test.err != nil {
+			datastore.SetError(test.err, test.when)
+		}
+
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("GET", "http://localhost/"+test.id, nil)
+
+		DeleteURL(w, r)
+
+		body := w.Body.String()
+		if test.expected != body {
+			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
+				k, test.expected, body)
+		}
+
+		if test.code != w.Code {
+			t.Errorf("Test %v: codes not equal: expecting %v, got %v",
+				k, test.code, w.Code)
+		}
+	}
+}
+
+func TestNewURL(t *testing.T) {
+	prep()
+
+	tests := []struct {
+		long     string
+		short    int
+		expected string
+		err      error
+		when     int
+	}{
+		// Test a new.
+		{
+			long:  "http://test.new/1000.html",
+			short: 1000,
+		},
+
+		// Test an error
+		{
+			long:     "http://test.new/blah.html",
+			short:    1001,
+			expected: `oops`,
+			err:      fmt.Errorf("failure"),
+			when:     1,
+		},
+	}
+
+	for k, test := range tests {
+		if test.err != nil {
+			datastore.SetError(test.err, test.when)
+		}
+
+		var b bytes.Buffer
+		b.Write([]byte(`{"Long":"` + test.long + `"}`))
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("POST", "http://localhost/urls", &b)
+
+		NewURL(w, r)
+
+		if test.err != nil {
+			body := w.Body.String()
+			if test.expected != body {
+				t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
+					k, test.expected, body)
+			}
+		} else {
+			body := w.Body.Bytes()
+			if !bytes.Contains(body, []byte(IntToShort(test.short))) {
+				t.Errorf("Test %v: short id not found: looking for %v, got %v",
+					k, IntToShort(test.short), string(body))
+
+			}
 		}
 	}
 }
@@ -219,6 +324,8 @@ func prep() {
 		stats: make(map[string]*Statistics),
 		logs:  make(map[string][]*Log),
 	}
+
+	datastore.count = 1000
 
 	t, _ := time.Parse("Jan 2 2006", "Jan 2 2013")
 

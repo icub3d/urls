@@ -2,7 +2,6 @@ package urls
 
 import (
 	"net/http"
-	"path"
 	"time"
 )
 
@@ -19,15 +18,6 @@ type URL struct {
 
 	// The number of clicks this URL has received.
 	Clicks int
-}
-
-// NewURL creates a new url with the currend time and 0 clicks. The
-// shortened url is not set.
-func NewURL(long string) *URL {
-	return &URL{
-		Long:    long,
-		Created: time.Now(),
-	}
 }
 
 // Log is a log of a click.
@@ -49,9 +39,9 @@ type Log struct {
 }
 
 // NewLog creates a new log entry from the given request.
-func NewLog(r *http.Request) *Log {
+func NewLog(short string, r *http.Request) *Log {
 	return &Log{
-		Short:     path.Base(r.URL.Path),
+		Short:     short,
 		When:      time.Now(),
 		Addr:      r.RemoteAddr,
 		Referrer:  r.Header.Get("Referer"),

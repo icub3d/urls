@@ -3,9 +3,11 @@ package urls
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"path"
+	"time"
 )
 
 var (
@@ -14,7 +16,7 @@ var (
 	DS DataStore
 )
 
-// GetUrls is a handler func for getting a list of urls sorted by
+// GetURLs is a handler func for getting a list of urls sorted by
 // create date. If limit and offset are query parameters, they are
 // used to limit the return set and offset from the beginning. Offset
 // defaults to 0 and limit defaults to 20. The max offset is 100.
@@ -23,7 +25,7 @@ var (
 // check any session or admin cookies or anything like that. If you
 // are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func GetUrls(w http.ResponseWriter, r *http.Request) {
+func GetURLs(w http.ResponseWriter, r *http.Request) {
 	// Get the query parameters.
 	q := r.URL.Query()
 	limit := paramGetInt(q, "limit")
@@ -62,14 +64,14 @@ func GetUrls(w http.ResponseWriter, r *http.Request) {
 	w.Write(enc)
 }
 
-// CountUrls is a handler func that returns the number of urls in the
+// CountURLs is a handler func that returns the number of urls in the
 // system. It returns json in the form: {"count":%v}.
 //
 // This would normally map to something like GET /count/urls. It does
 // not check any session or admin cookies or anything like that. If
 // you are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func CountUrls(w http.ResponseWriter, r *http.Request) {
+func CountURLs(w http.ResponseWriter, r *http.Request) {
 	c, err := DS.CountURLs()
 	if err != nil {
 		log.Printf("CountUrls() failed with: %v", err)
@@ -82,13 +84,81 @@ func CountUrls(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// TODO implement NewUrl POST /urls
-// Expects POST data to be JSON of *Url without a short ID.
-// The short ID will be blanked and a time will be created.
-// returns *Url as JSON with fixed short ID
+// NewURL creates a new URL based on the URL given as JSON. The short
+// ID is created, the count is zeroed and the time is set to the
+// current time. The updated URL is returned.
+//
+// This would normally map to something like POST /urls. It
+// does not check any session or admin cookies or anything like
+// that. If you are checking those (and you probably should), you can
+// wrap this handler in another handler.
+func NewURL(w http.ResponseWriter, r *http.Request) {
+	// Get the posted data.
+	u := &URL{}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("ReadAll() failed on body: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
 
-// TODO implement DeleteUrl DELETE /urls/{id}
-// returns 200 OK or 404 Not Found
+	err = json.Unmarshal(body, u)
+	if err != nil {
+		log.Printf("Unmarshal() failed on body: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Set the fields.
+	u.Clicks = 0
+	u.Short = ""
+	u.Created = time.Now()
+
+	// Put the URL.
+	_, err = DS.PutURL(u)
+	if err != nil {
+		log.Printf("PutURL(%v) failed on body: %v", u, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Marshal it to JSON.
+	enc, err := json.Marshal(u)
+	if err != nil {
+		log.Printf("Marshal(%v) failed with: %v", u, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Write the response.
+	w.Write(enc)
+}
+
+// DeleteURL deletes the url with the short id in the URL.
+//
+// This would normally map to something like DELETE /urls/{id}. It
+// does not check any session or admin cookies or anything like
+// that. If you are checking those (and you probably should), you can
+// wrap this handler in another handler.
+func DeleteURL(w http.ResponseWriter, r *http.Request) {
+	id := path.Base(r.URL.Path)
+
+	err := DS.DeleteURL(id)
+	if err != nil {
+		if err != nil {
+			log.Printf("GetUrl(%v) failed with: %v", id, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("oops"))
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
 
 // TODO implement GetLogs GET /logs/{id}
 // limit defaults to 20 max is 100
@@ -112,6 +182,7 @@ func CountUrls(w http.ResponseWriter, r *http.Request) {
 func Redirect(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
+	// Get the URL in question.
 	u, err := DS.GetURL(id)
 	if err != nil {
 		if err != nil {
@@ -122,13 +193,23 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if u != nil {
-		w.Header().Add("Location", u.Long)
-		w.WriteHeader(http.StatusFound)
+	// Check for nil.
+	if u == nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
 		return
 	}
 
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("not found"))
+	// Create a Log entry.
+	l := NewLog(id, r)
+	err = DS.LogClick(l)
+	if err != nil {
+		// We shouldn't error out here but we should log it.
+		log.Printf("LogClick(%v) failed (not likely recorded with: %v",
+			l, err)
+	}
 
+	// Write the redirect.
+	w.Header().Add("Location", u.Long)
+	w.WriteHeader(http.StatusFound)
 }
