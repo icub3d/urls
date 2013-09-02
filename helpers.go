@@ -1,4 +1,4 @@
-package gourl
+package urls
 
 import (
 	"regexp"

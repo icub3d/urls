@@ -1,0 +1,13 @@
+# You should change the application value to match your ID.
+application: mrsh-in-url
+version: 1
+runtime: go
+api_version: go1
+
+handlers:
+  - url: /admin/.*
+    login: required
+    script: _go_app
+    
+  - url: /.*
+    script: _go_app

@@ -1,4 +1,4 @@
-package gourl
+package urls
 
 type DataStore interface {
 	// Get the total count of Urls in the system.

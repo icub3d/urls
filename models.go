@@ -1,7 +1,8 @@
-package gourl
+package urls
 
 import (
 	"net/http"
+	"path"
 	"time"
 )
 
@@ -50,7 +51,7 @@ type Log struct {
 // NewLog creates a new log entry from the given request.
 func NewLog(r *http.Request) *Log {
 	return &Log{
-		Short:     r.URL.Path,
+		Short:     path.Base(r.URL.Path),
 		When:      time.Now(),
 		Addr:      r.RemoteAddr,
 		Referrer:  r.Header.Get("Referer"),
