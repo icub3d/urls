@@ -4,7 +4,7 @@ type DataStore interface {
 	// Get the total count of Urls in the system.
 	CountUrls() (int, error)
 
-	// Get the next limit urls order by create date and offset by the
+	// Get the next limit urls order by create date (newest first) and offset by the
 	// given offset.
 	GetUrls(limit, offset int) ([]*Url, error)
 
@@ -12,7 +12,7 @@ type DataStore interface {
 	GetUrl(short string) (*Url, error)
 
 	// Remove the given url and it's associated logs and statistics.
-	DeleteUrl(url *Url) error
+	DeleteUrl(short string) error
 
 	// Put the given url into the data store. If the short id exists,
 	// overwrite it. Otherwise insert a new entry. When inserting, the
@@ -35,6 +35,6 @@ type DataStore interface {
 	CountLogs(short string) (int, error)
 
 	// Get the next limit logs of the given short id sorted by create
-	// date and offset by the given offset.
+	// date (newest first) and offset by the given offset.
 	GetLogs(short string, limit, offset int) ([]*Log, error)
 }

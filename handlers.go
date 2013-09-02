@@ -2,9 +2,10 @@ package urls
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
-	"net/url"
-	"strconv"
+	"path"
 )
 
 var (
@@ -13,36 +14,20 @@ var (
 	DS DataStore
 )
 
-// getInt is a helper function that returns the integer value of the
-// query parameter with the given key.
-func getInt(q url.Values, key string) int {
-	value := q.Get(key)
-	if value == "" {
-		return 0
-	}
-
-	i, err := strconv.Atoi(value)
-	if err != nil {
-		return 0
-	}
-
-	return i
-}
-
-// GetUrls gets a list of urls sorted by create date. If limit and
-// offset are query parameters, they are used to limit the return set
-// and offset from the beginning. offset defaults to 0 and limit
-// defaults to 20. The max offset is 100.
+// GetUrls is a handler func for getting a list of urls sorted by
+// create date. If limit and offset are query parameters, they are
+// used to limit the return set and offset from the beginning. Offset
+// defaults to 0 and limit defaults to 20. The max offset is 100.
 //
 // This would normally map to something like GET /urls. It does not
 // check any session or admin cookies or anything like that. If you
-// are checking those (and you probably should, you can wrap this
+// are checking those (and you probably should), you can wrap this
 // handler in another handler.
 func GetUrls(w http.ResponseWriter, r *http.Request) {
 	// Get the query parameters.
 	q := r.URL.Query()
-	limit := getInt(q, "limit")
-	offset := getInt(q, "offset")
+	limit := paramGetInt(q, "limit")
+	offset := paramGetInt(q, "offset")
 
 	// Set sane values if we don't find any.
 	if limit <= 0 {
@@ -54,10 +39,48 @@ func GetUrls(w http.ResponseWriter, r *http.Request) {
 	if offset < 0 {
 		offset = 0
 	}
+
+	// Get the data.
+	u, err := DS.GetUrls(limit, offset)
+	if err != nil {
+		log.Printf("GetUrls(%v, %v) failed with: %v", limit, offset, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Marshal it to JSON.
+	enc, err := json.Marshal(u)
+	if err != nil {
+		log.Printf("Marshal(%v) failed with: %v", u, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Write the response.
+	w.Write(enc)
 }
 
-// TODO implement CountUrls GET /count/urls
-// returns {"count": count} as JSON
+// CountUrls is a handler func that returns the number of urls in the
+// system. It returns json in the form: {"count":%v}.
+//
+// This would normally map to something like GET /count/urls. It does
+// not check any session or admin cookies or anything like that. If
+// you are checking those (and you probably should), you can wrap this
+// handler in another handler.
+func CountUrls(w http.ResponseWriter, r *http.Request) {
+	c, err := DS.CountUrls()
+	if err != nil {
+		log.Printf("CountUrls() failed with: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf(`{"count":%v}`, c)))
+
+}
 
 // TODO implement NewUrl POST /urls
 // Expects POST data to be JSON of *Url without a short ID.
@@ -84,5 +107,31 @@ func GetUrls(w http.ResponseWriter, r *http.Request) {
 // TODO implement CreateStatistics PUT /stats/
 // Re-analyze the statistics.
 
-// TODO implement Redirect /{id}
-// if the id is found, issues a redirect. Otherwise 404 not found.
+// Redirect is a handler func that handles the redirect. Given a short
+// id, it sets the HTTP code to 302 and the Location header. If the
+// short id isn't found, a 404 not found is returned.
+//
+// This would normally map to something like GET /{id}.
+func Redirect(w http.ResponseWriter, r *http.Request) {
+	id := path.Base(r.URL.Path)
+
+	u, err := DS.GetUrl(id)
+	if err != nil {
+		if err != nil {
+			log.Printf("GetUrl(%v) failed with: %v", id, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("oops"))
+			return
+		}
+	}
+
+	if u != nil {
+		w.Header().Add("Location", u.Long)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("not found"))
+
+}

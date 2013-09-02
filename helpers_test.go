@@ -1,6 +1,7 @@
 package urls
 
 import (
+	"net/url"
 	"testing"
 )
 
@@ -35,70 +36,6 @@ func TestValidID(t *testing.T) {
 				k, test.expected, test.id, result)
 		}
 	}
-}
-
-func TestDigit(t *testing.T) {
-	tests := []struct {
-		id       int
-		expected string
-	}{
-		// Test values in int range.
-		{
-			id:       0,
-			expected: "0",
-		},
-		{
-			id:       5,
-			expected: "5",
-		},
-		{
-			id:       9,
-			expected: "9",
-		},
-
-		// Test values in A-Z range.
-		{
-			id:       10,
-			expected: "A",
-		},
-		{
-			id:       25,
-			expected: "P",
-		},
-		{
-			id:       35,
-			expected: "Z",
-		},
-
-		// Test values in a-z range.
-		{
-			id:       36,
-			expected: "a",
-		},
-		{
-			id:       51,
-			expected: "p",
-		},
-		{
-			id:       61,
-			expected: "z",
-		},
-
-		// Test an invalid id.
-		{
-			id:       62,
-			expected: "",
-		},
-	}
-
-	for k, test := range tests {
-		result := digit(test.id)
-		if result != test.expected {
-			t.Errorf("Test %v: expected %v from digit(%v), but got %v",
-				k, test.expected, test.id, result)
-		}
-	}
-
 }
 
 func TestIntToShort(t *testing.T) {
@@ -527,4 +464,111 @@ func TestIntToShort(t *testing.T) {
 				k, test.expected, test.id, result)
 		}
 	}
+}
+
+func TestDigit(t *testing.T) {
+	tests := []struct {
+		id       int
+		expected string
+	}{
+		// Test values in int range.
+		{
+			id:       0,
+			expected: "0",
+		},
+		{
+			id:       5,
+			expected: "5",
+		},
+		{
+			id:       9,
+			expected: "9",
+		},
+
+		// Test values in A-Z range.
+		{
+			id:       10,
+			expected: "A",
+		},
+		{
+			id:       25,
+			expected: "P",
+		},
+		{
+			id:       35,
+			expected: "Z",
+		},
+
+		// Test values in a-z range.
+		{
+			id:       36,
+			expected: "a",
+		},
+		{
+			id:       51,
+			expected: "p",
+		},
+		{
+			id:       61,
+			expected: "z",
+		},
+
+		// Test an invalid id.
+		{
+			id:       62,
+			expected: "",
+		},
+	}
+
+	for k, test := range tests {
+		result := digit(test.id)
+		if result != test.expected {
+			t.Errorf("Test %v: expected %v from digit(%v), but got %v",
+				k, test.expected, test.id, result)
+		}
+	}
+
+}
+
+func TestParamGetInt(t *testing.T) {
+	tests := []struct {
+		q        url.Values
+		key      string
+		expected int
+	}{
+		// Test a missing key.
+		{
+			q: url.Values{
+				"test": []string{},
+			},
+			key:      "notfound",
+			expected: 0,
+		},
+
+		// Test a non-integer value.
+		{
+			q: url.Values{
+				"test": []string{"nonint"},
+			},
+			key:      "test",
+			expected: 0,
+		},
+
+		// Test a normal value.
+		{
+			q: url.Values{
+				"test": []string{"54818"},
+			},
+			key:      "test",
+			expected: 54818,
+		},
+	}
+	for k, test := range tests {
+		result := paramGetInt(test.q, test.key)
+		if result != test.expected {
+			t.Errorf("Test %v: expected %v from paramGetInt(%v, %v), but got %v",
+				k, test.expected, test.q, test.key, result)
+		}
+	}
+
 }

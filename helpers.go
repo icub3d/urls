@@ -1,7 +1,9 @@
 package urls
 
 import (
+	"net/url"
 	"regexp"
+	"strconv"
 )
 
 var (
@@ -17,6 +19,24 @@ const (
 // ValidID returns true if the given string is a valid ID.
 func ValidID(id string) bool {
 	return re.MatchString(id)
+}
+
+// IntToShort returns the string representation of the given
+// integer. Values less than 0 return 0. Otherwise, it will be some
+// string that includes the characters 0-9, a-z, and A-Z.
+func IntToShort(i int) string {
+	if i <= 0 {
+		return "0"
+	}
+
+	s := ""
+	for i > 0 {
+		r := i % base
+		s = digit(r) + s
+		i = i / base
+	}
+
+	return s
 }
 
 // Digit convers the given integer into its representative single
@@ -36,20 +56,18 @@ func digit(i int) string {
 	return string([]byte{byte(i)})
 }
 
-// IntToShort returns the string representation of the given
-// integer. Values less than 0 return 0. Otherwise, it will be some
-// string that includes the characters 0-9, a-z, and A-Z.
-func IntToShort(i int) string {
-	if i <= 0 {
-		return "0"
+// paramGetInt is a helper function that returns the integer value of the
+// query paramGetInt with the given key.
+func paramGetInt(q url.Values, key string) int {
+	value := q.Get(key)
+	if value == "" {
+		return 0
 	}
 
-	s := ""
-	for i > 0 {
-		r := i % base
-		s = digit(r) + s
-		i = i / base
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
 	}
 
-	return s
+	return i
 }
