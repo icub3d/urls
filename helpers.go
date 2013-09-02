@@ -1,6 +1,9 @@
 package urls
 
 import (
+	"encoding/json"
+	"log"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -70,4 +73,46 @@ func paramGetInt(q url.Values, key string) int {
 	}
 
 	return i
+}
+
+// getLimitOffset is a helper function that gets the limit and offset
+// values from the query parameters and sets them to sane values if
+// they are not sane. Limit defaults to 20 and offset 0. If limit >
+// 100, limit will be set to 100. If values are negative, they are set
+// to their default.
+func getLimitOffset(q url.Values) (int, int) {
+	// Get the query parameters.
+	limit := paramGetInt(q, "limit")
+	offset := paramGetInt(q, "offset")
+
+	// Set sane values if we don't find any.
+	if limit <= 0 {
+		limit = 20
+	} else if limit > 100 {
+		limit = 100
+	}
+
+	if offset < 0 {
+		offset = 0
+	}
+
+	return limit, offset
+}
+
+// marshalAndWrite is a helper function that marshals the given data
+// and writes it to the ResponseWrite. If marshalling fails, "oops" is
+// returns as well as the http.StatusInternalServerError.
+func marshalAndWrite(w http.ResponseWriter, i interface{}) {
+	// Marshal it to JSON.
+	enc, err := json.Marshal(i)
+	if err != nil {
+		log.Printf("Marshal(%v) failed with: %v", i, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	// Write the response.
+	w.Write(enc)
+
 }

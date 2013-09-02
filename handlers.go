@@ -27,20 +27,7 @@ var (
 // handler in another handler.
 func GetURLs(w http.ResponseWriter, r *http.Request) {
 	// Get the query parameters.
-	q := r.URL.Query()
-	limit := paramGetInt(q, "limit")
-	offset := paramGetInt(q, "offset")
-
-	// Set sane values if we don't find any.
-	if limit <= 0 {
-		limit = 20
-	} else if limit > 100 {
-		limit = 100
-	}
-
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset := getLimitOffset(r.URL.Query())
 
 	// Get the data.
 	u, err := DS.GetURLs(limit, offset)
@@ -51,17 +38,7 @@ func GetURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Marshal it to JSON.
-	enc, err := json.Marshal(u)
-	if err != nil {
-		log.Printf("Marshal(%v) failed with: %v", u, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oops"))
-		return
-	}
-
-	// Write the response.
-	w.Write(enc)
+	marshalAndWrite(w, u)
 }
 
 // CountURLs is a handler func that returns the number of urls in the
@@ -125,17 +102,7 @@ func NewURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Marshal it to JSON.
-	enc, err := json.Marshal(u)
-	if err != nil {
-		log.Printf("Marshal(%v) failed with: %v", u, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oops"))
-		return
-	}
-
-	// Write the response.
-	w.Write(enc)
+	marshalAndWrite(w, u)
 }
 
 // DeleteURL deletes the url with the short id in the URL.
@@ -160,13 +127,54 @@ func DeleteURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// TODO implement GetLogs GET /logs/{id}
-// limit defaults to 20 max is 100
-// offset defaults to 0
-// returns []*Log as JSON
+// GetLogs is a handler func for getting a list of logs for a short id
+// sorted by create date. If limit and offset are query parameters,
+// they are used to limit the return set and offset from the
+// beginning. Offset defaults to 0 and limit defaults to 20. The max
+// offset is 100.
+//
+// This would normally map to something like GET /logs/{id}. It does not
+// check any session or admin cookies or anything like that. If you
+// are checking those (and you probably should), you can wrap this
+// handler in another handler.
+func GetLogs(w http.ResponseWriter, r *http.Request) {
+	id := path.Base(r.URL.Path)
 
-// TODO implement CountLogs GET /count/logs/{id}
-// returns {"count": count} as JSON
+	limit, offset := getLimitOffset(r.URL.Query())
+
+	// Get the data.
+	u, err := DS.GetLogs(id, limit, offset)
+	if err != nil {
+		log.Printf("GetLogs(%v, %v, %v) failed with: %v", id, limit, offset, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	marshalAndWrite(w, u)
+}
+
+// CountLogs is a handler func that returns the number of logs in the
+// system for the given Id. It returns json in the form: {"count":%v}.
+//
+// This would normally map to something like GET /count/logs/{id}. It does
+// not check any session or admin cookies or anything like that. If
+// you are checking those (and you probably should), you can wrap this
+// handler in another handler.
+func CountLogs(w http.ResponseWriter, r *http.Request) {
+	id := path.Base(r.URL.Path)
+
+	c, err := DS.CountLogs(id)
+	if err != nil {
+		log.Printf("CountUrls() failed with: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf(`{"count":%v}`, c)))
+
+}
 
 // TODO implement GetStatistics GET /stats/{id}
 // returns *Statistics as JSON.

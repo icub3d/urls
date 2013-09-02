@@ -33,22 +33,6 @@ func TestGetUrls(t *testing.T) {
 			end:    20,
 		},
 
-		// Test bad values.
-		{
-			limit:  -1,
-			offset: -1,
-			start:  0,
-			end:    20,
-		},
-
-		// Test excessive limit
-		{
-			limit:  101,
-			offset: 0,
-			start:  0,
-			end:    100,
-		},
-
 		// Test in the middle
 		{
 			limit:  25,
@@ -72,8 +56,6 @@ func TestGetUrls(t *testing.T) {
 			err:    fmt.Errorf("failure"),
 			when:   1,
 		},
-
-		// TODO not sure how for force a Marshal error at this point.
 	}
 
 	a := datastore.URLsArray()
@@ -249,6 +231,119 @@ func TestNewURL(t *testing.T) {
 	}
 }
 
+func TestGetLogs(t *testing.T) {
+	prep()
+
+	tests := []struct {
+		id     string
+		limit  int
+		offset int
+		err    error
+		when   int
+		start  int
+		end    int
+	}{
+		// Test beginning.
+		{
+			id:     "1c",
+			limit:  20,
+			offset: 0,
+			start:  0,
+			end:    20,
+		},
+
+		// Test in the middle
+		{
+			id:     "1c",
+			limit:  25,
+			offset: 25,
+			start:  25,
+			end:    50,
+		},
+
+		// Test a failure.
+		{
+			id:     "1c",
+			limit:  25,
+			offset: 50,
+			err:    fmt.Errorf("failure"),
+			when:   1,
+		},
+	}
+
+	for k, test := range tests {
+		a := datastore.LogsArray(test.id)
+
+		if test.err != nil {
+			datastore.SetError(test.err, test.when)
+		}
+
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("GET",
+			fmt.Sprintf("http://localhost/admin/logs/%v?limit=%v&offset=%v",
+				test.id, test.limit, test.offset), nil)
+
+		GetLogs(w, r)
+
+		enc, _ := json.Marshal(a[test.start:test.end])
+
+		if test.err != nil {
+			enc = []byte("oops")
+		}
+
+		body := w.Body.Bytes()
+
+		if !bytes.Equal(enc, body) {
+			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
+				k, string(enc), string(body))
+		}
+	}
+}
+
+func TestCountLogs(t *testing.T) {
+	prep()
+
+	tests := []struct {
+		id       string
+		err      error
+		when     int
+		expected string
+	}{
+		// Test normal get.
+		{
+			id:       "1c",
+			expected: `{"count":100}`,
+		},
+
+		// Test an error.
+		{
+			id:       "1c",
+			err:      fmt.Errorf("failure"),
+			when:     1,
+			expected: "oops",
+		},
+	}
+
+	for k, test := range tests {
+		if test.err != nil {
+			datastore.SetError(test.err, test.when)
+		}
+
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("GET",
+			fmt.Sprintf("http://localhost/admin/count/logs/%v", test.id), nil)
+
+		CountLogs(w, r)
+
+		body := w.Body.String()
+
+		if test.expected != body {
+			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
+				k, test.expected, body)
+		}
+	}
+}
+
 func TestRedirect(t *testing.T) {
 	prep()
 
@@ -339,6 +434,20 @@ func prep() {
 		}
 
 		datastore.PutURL(u)
+
+		l := make([]*Log, 0, x)
+		for y := 0; y < x; y++ {
+			l = append(l, &Log{
+				Short:     u.Short,
+				When:      t.AddDate(0, 0, -y),
+				Addr:      "127.0.0." + strconv.Itoa(y),
+				Referrer:  "www.google.com",
+				UserAgent: " Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405",
+			})
+		}
+
+		datastore.logs[u.Short] = l
+
 	}
 
 	DS = datastore
@@ -508,18 +617,25 @@ func (ds *mds) CountLogs(short string) (int, error) {
 	return len(ds.logs[short]), nil
 }
 
+func (ds *mds) LogsArray(id string) []*Log {
+	// Get an array of the urls
+	u := slogs{}
+	for _, v := range ds.logs[id] {
+		u = append(u, v)
+	}
+
+	sort.Sort(u)
+
+	return u
+}
+
 func (ds *mds) GetLogs(short string, limit, offset int) ([]*Log, error) {
 	if err := ds.error(); err != nil {
 		return nil, err
 	}
 
 	// Get an array of the urls
-	u := slogs{}
-	for _, v := range ds.logs[short] {
-		u = append(u, v)
-	}
-
-	sort.Sort(u)
+	u := ds.LogsArray(short)
 
 	if offset > len(u) {
 		return []*Log{}, nil

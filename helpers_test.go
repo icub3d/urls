@@ -1,6 +1,8 @@
 package urls
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 )
@@ -571,4 +573,95 @@ func TestParamGetInt(t *testing.T) {
 		}
 	}
 
+}
+
+func TestGetLimitOffset(t *testing.T) {
+	tests := []struct {
+		q      url.Values
+		limit  int
+		offset int
+	}{
+		// Test no limit or offset
+		{
+			q:      url.Values{},
+			limit:  20,
+			offset: 0,
+		},
+
+		// Test values too small
+		{
+			q: url.Values{
+				"limit":  []string{"0"},
+				"offset": []string{"-1"},
+			},
+			limit:  20,
+			offset: 0,
+		},
+
+		// Test a limit over 100
+		{
+			q: url.Values{
+				"limit":  []string{"101"},
+				"offset": []string{"2"},
+			},
+			limit:  100,
+			offset: 2,
+		},
+
+		// Test a normal get.
+		{
+			q: url.Values{
+				"limit":  []string{"55"},
+				"offset": []string{"23"},
+			},
+			limit:  55,
+			offset: 23,
+		},
+	}
+	for k, test := range tests {
+		limit, offset := getLimitOffset(test.q)
+		if limit != test.limit || offset != test.offset {
+			t.Errorf(
+				"Test %v: expected (%v,%v) from getLimitOffset(%v), but got (%v,%v)",
+				k, test.limit, test.offset, test.q, limit, offset)
+		}
+	}
+
+}
+
+func TestMarshalAndWrite(t *testing.T) {
+	tests := []struct {
+		i        interface{}
+		code     int
+		expected string
+	}{
+		// Test a normal write.
+		{
+			i:        123,
+			code:     http.StatusOK,
+			expected: "123",
+		},
+
+		// Test a failed marshal.
+		{
+			i:        complex(1, 1),
+			code:     http.StatusInternalServerError,
+			expected: "oops",
+		},
+	}
+
+	for k, test := range tests {
+		w := httptest.NewRecorder()
+
+		marshalAndWrite(w, test.i)
+
+		if w.Code != test.code {
+			t.Errorf("Test %v: expected code %v but got %v", k, test.code, w.Code)
+		}
+
+		if w.Body.String() != test.expected {
+			t.Errorf("Test %v: expected body '%v' but got '%v'",
+				k, test.expected, w.Body.String())
+		}
+	}
 }
