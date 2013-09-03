@@ -159,121 +159,6 @@ func GetStatistics(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(w, u)
 }
 
-// CreateStatistics is a handler function that updates the statistics
-// of each URL. It checks each URL, but only updates the statistics
-// with new log entries.
-//
-// This would normally map to something like PUT /stats. It does not
-// check any session or admin cookies or anything like that. If you
-// are checking those (and you probably should), you can wrap this
-// handler in another handler.
-func CreateStatistics(ds DataStore, w http.ResponseWriter, r *http.Request) {
-	// These are the number of records we'll get per loop.
-	const LIMIT = 1000
-
-	offset := 0
-	for {
-		// Fetch the next set of URLs.
-		urls, err := ds.GetURLs(LIMIT, offset)
-		if err != nil {
-			log.Printf(
-				"GetURLs(100, %v) during CreateStatistics failed. Stopping with: %v",
-				offset, err)
-			return
-		}
-
-		if len(urls) == 0 {
-			return
-		}
-		offset += LIMIT
-
-		// Loop through each URL.
-		for _, url := range urls {
-			// Get the current stats for this url.
-			stats, err := ds.GetStatistics(url.Short)
-			if err != nil {
-				log.Printf(
-					"GetStatistics(%v) failed. Skipping this URL: %v",
-					url.Short, err)
-				return
-			}
-
-			// Create the maps if they weren't created.
-			if stats.Referrers == nil {
-				stats.Referrers = make(map[string]int)
-			}
-			if stats.Browsers == nil {
-				stats.Browsers = make(map[string]int)
-			}
-			if stats.Countries == nil {
-				stats.Countries = make(map[string]int)
-			}
-			if stats.Platforms == nil {
-				stats.Platforms = make(map[string]int)
-			}
-			if stats.Hours == nil {
-				stats.Hours = make(map[string]int)
-			}
-
-			// Now loop through all the Logs until we get to the last time
-			// the log was updated.
-			logOffset := 0
-			var latest time.Time
-			for {
-				logs, err := ds.GetLogs(url.Short, LIMIT, logOffset)
-				if err != nil {
-					log.Printf(
-						"GetLogs(%v, 100, %v) failed. Stopping: %v",
-						url.Short, logOffset, err)
-					return
-				}
-				logOffset += LIMIT
-
-				if len(logs) == 0 {
-					break
-				}
-
-				for _, log := range logs {
-					if stats.LastUpdated.After(log.When) {
-						// We have already processed this log.
-						continue
-					}
-
-					if log.When.After(latest) {
-						latest = log.When
-					}
-
-					browser, platform := parseUserAgent(log.UserAgent)
-					country := determineCountry(log.Addr)
-					hour := fmt.Sprintf("%04d%02d%02d%02d",
-						log.When.Year(), log.When.Month(), log.When.Day(),
-						log.When.Hour())
-
-					// Update the values.
-					stats.Referrers[log.Referrer] = stats.Referrers[log.Referrer] + 1
-					stats.Browsers[browser] = stats.Browsers[browser] + 1
-					stats.Countries[country] = stats.Countries[country] + 1
-					stats.Platforms[platform] = stats.Platforms[platform] + 1
-					stats.Hours[hour] = stats.Hours[hour] + 1
-
-					// Update the clicks.
-					stats.Clicks += 1
-					url.Clicks += 1
-				}
-			}
-
-			// Set the update time to the newest time.
-			stats.LastUpdated = latest
-
-			// Put the Url for the Clicks count.
-			ds.PutURL(url)
-
-			// Put the Statistics.
-			ds.PutStatistics(stats)
-		}
-	}
-}
-
 // Redirect is a handler func that handles the redirect. Given a short
 // id, it sets the HTTP code to 302 and the Location header. If the
 // short id isn't found, a 404 not found is returned.
@@ -315,6 +200,8 @@ func Redirect(ds DataStore, w http.ResponseWriter, r *http.Request) {
 		log.Printf("LogClick(%v) failed (not likely recorded with: %v",
 			l, err)
 	}
+
+	updateStats(ds, u, r)
 
 	// Write the redirect.
 	w.Header().Add("Location", u.Long)

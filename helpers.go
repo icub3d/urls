@@ -2,6 +2,7 @@ package urls
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -243,4 +245,68 @@ func determineCountry(addr string) string {
 	}
 
 	return country
+}
+
+// updateStats is a helper function that updates the stats of a url
+// based on a request.
+func updateStats(ds DataStore, url *URL, r *http.Request) {
+	// TODO no testing is being done on this since we removed the
+	// CreateStatistics but the code hasn't changed. If it does, we
+	// should probably start testing this.
+	stats, err := ds.GetStatistics(url.Short)
+	if err != nil {
+		log.Printf(
+			"GetStatistics(%v) failed. Skipping update: %v",
+			url.Short, err)
+		return
+	}
+
+	// Create the maps if they weren't created.
+	if stats.Referrers == nil {
+		stats.Referrers = make(map[string]int)
+	}
+	if stats.Browsers == nil {
+		stats.Browsers = make(map[string]int)
+	}
+	if stats.Countries == nil {
+		stats.Countries = make(map[string]int)
+	}
+	if stats.Platforms == nil {
+		stats.Platforms = make(map[string]int)
+	}
+	if stats.Hours == nil {
+		stats.Hours = make(map[string]int)
+	}
+
+	now := time.Now()
+
+	referrer := r.Header.Get("Referer")
+	browser, platform := parseUserAgent(r.Header.Get("User-Agent"))
+	country := determineCountry(r.RemoteAddr)
+	hour := fmt.Sprintf("%04d%02d%02d%02d",
+		now.Year(), now.Month(), now.Day(),
+		now.Hour())
+
+	// Update the values.
+	stats.Referrers[referrer] = stats.Referrers[referrer] + 1
+	stats.Browsers[browser] = stats.Browsers[browser] + 1
+	stats.Countries[country] = stats.Countries[country] + 1
+	stats.Platforms[platform] = stats.Platforms[platform] + 1
+	stats.Hours[hour] = stats.Hours[hour] + 1
+
+	// set the short name in case it's a new one.
+	stats.Short = url.Short
+
+	// Update the clicks.
+	stats.Clicks += 1
+	url.Clicks += 1
+
+	// Set the update time to the newest time.
+	stats.LastUpdated = now
+
+	// Put the Url for the Clicks count.
+	ds.PutURL(url)
+
+	// Put the Statistics.
+	ds.PutStatistics(stats)
 }
