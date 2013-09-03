@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -115,4 +116,92 @@ func marshalAndWrite(w http.ResponseWriter, i interface{}) {
 	// Write the response.
 	w.Write(enc)
 
+}
+
+// parseUserAgent looks for keywords in the given string and returns
+// the best guess for the browser and platform.
+func parseUserAgent(ua string) (string, string) {
+	browser := "Unknown"
+	platform := "Unknown"
+
+	// These are in this order because some contain the others.
+	browsers := []string{
+		"Chrome",
+		"Safari",
+		"Firefox",
+		"MSIE",
+		"Opera",
+	}
+	for _, search := range browsers {
+		if strings.Contains(ua, search) {
+			browser = search
+			break
+		}
+	}
+
+	platforms := map[string]string{
+		"Linux":          "Linux",
+		"Windows NT 5.1": "Windows XP",
+		"Windows NT 6.1": "Windows 7",
+		"Windows NT 6.2": "Windows 8",
+		"Mac OS X":       "Mac OS X",
+		"iPhone":         "iOS",
+		"iPad":           "iOS",
+	}
+
+	for search, value := range platforms {
+		if strings.Contains(ua, search) {
+			platform = value
+			break
+		}
+	}
+
+	return browser, platform
+}
+
+// Determine country attempts to determine the country of origin by
+// the IP Address.
+func determineCountry(addr string) string {
+	country := "Unknown"
+
+	// Get the parts.
+	addr = strings.Split(addr, ":")[0]
+	parts := strings.Split(addr, ".")
+	if len(parts) != 4 {
+		return country
+	}
+
+	// get the integer equivalent.
+	total := 0
+	i, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return country
+	}
+	total = total + 16777216*i
+
+	i, err = strconv.Atoi(parts[1])
+	if err != nil {
+		return country
+	}
+	total = total + 65536*i
+
+	i, err = strconv.Atoi(parts[2])
+	if err != nil {
+		return country
+	}
+	total = total + 256*i
+
+	i, err = strconv.Atoi(parts[3])
+	if err != nil {
+		return country
+	}
+	total = total + i
+
+	for _, ipr := range ipLookup {
+		if total > ipr.start && total < ipr.end {
+			return ipr.country
+		}
+	}
+
+	return country
 }

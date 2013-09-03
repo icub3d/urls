@@ -665,3 +665,116 @@ func TestMarshalAndWrite(t *testing.T) {
 		}
 	}
 }
+
+func TestParseUserAgent(t *testing.T) {
+	tests := []struct {
+		ua       string
+		browser  string
+		platform string
+	}{
+		{
+			ua:       "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36",
+			browser:  "Chrome",
+			platform: "Windows 7",
+		},
+		{
+			ua:       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36",
+			browser:  "Chrome",
+			platform: "Mac OS X",
+		},
+		{
+			ua:       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1",
+			browser:  "Safari",
+			platform: "Mac OS X",
+		},
+		{
+			ua:       "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0",
+			browser:  "Firefox",
+			platform: "Windows 7",
+		},
+		{
+			ua:       "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36",
+			browser:  "Chrome",
+			platform: "Windows 8",
+		},
+		{
+			ua:       "Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.16",
+			browser:  "Opera",
+			platform: "Windows 7",
+		},
+		{
+			ua:       "",
+			browser:  "Unknown",
+			platform: "Unknown",
+		},
+	}
+
+	for k, test := range tests {
+		browser, platform := parseUserAgent(test.ua)
+
+		if test.browser != browser {
+			t.Errorf("Test %v: expected browser '%v' but got '%v': %v",
+				k, test.browser, browser, test.ua)
+		}
+
+		if test.platform != platform {
+			t.Errorf("Test %v: expected platform '%v' but got '%v': %v",
+				k, test.platform, platform, test.ua)
+		}
+	}
+}
+
+func TestDetermineCountry(t *testing.T) {
+	tests := []struct {
+		addr    string
+		country string
+	}{
+		// Test some invalid values
+		{
+			addr:    "abcdef",
+			country: "Unknown",
+		},
+		{
+			addr:    "10.84.8.abc",
+			country: "Unknown",
+		},
+		{
+			addr:    "10.84.abc.8",
+			country: "Unknown",
+		},
+		{
+			addr:    "10.aby.84.8",
+			country: "Unknown",
+		},
+		{
+			addr:    "abc.10.94.8",
+			country: "Unknown",
+		},
+		{
+			addr:    "127.0.0.1",
+			country: "Unknown",
+		},
+
+		// Test a few good values
+		{
+			addr:    "1.0.0.23",
+			country: "AU",
+		},
+		{
+			addr:    "223.255.255.201",
+			country: "AU",
+		},
+		{
+			addr:    "190.109.96.35",
+			country: "CO",
+		},
+	}
+
+	for k, test := range tests {
+		country := determineCountry(test.addr)
+		if country != test.country {
+			t.Errorf("Test %v: expected country '%v' but got '%v': %v",
+				k, test.country, country, test.addr)
+		}
+	}
+}

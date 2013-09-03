@@ -344,6 +344,49 @@ func TestCountLogs(t *testing.T) {
 	}
 }
 
+func TestGetStatistics(t *testing.T) {
+	prep()
+
+	tests := []struct {
+		id       string
+		err      error
+		when     int
+		expected string
+	}{
+		// Test in the middle
+		{
+			id:       "1c",
+			expected: `{"Short":"1c","Clicks":100,"LastUpdated":"0001-01-01T00:00:00Z","Referrers":null,"Browsers":null,"Countries":null,"Platforms":null,"Hours":null}`,
+		},
+
+		// Test a failure.
+		{
+			id:       "1c",
+			err:      fmt.Errorf("failure"),
+			when:     1,
+			expected: "oops",
+		},
+	}
+
+	for k, test := range tests {
+		if test.err != nil {
+			datastore.SetError(test.err, test.when)
+		}
+
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("GET",
+			fmt.Sprintf("http://localhost/admin/stats/%v",
+				test.id), nil)
+
+		GetStatistics(w, r)
+
+		if w.Body.String() != test.expected {
+			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
+				k, test.expected, w.Body.String())
+		}
+	}
+}
+
 func TestRedirect(t *testing.T) {
 	prep()
 
@@ -435,11 +478,16 @@ func prep() {
 
 		datastore.PutURL(u)
 
+		datastore.PutStatistics(&Statistics{
+			Short:  u.Short,
+			Clicks: x,
+		})
+
 		l := make([]*Log, 0, x)
 		for y := 0; y < x; y++ {
 			l = append(l, &Log{
 				Short:     u.Short,
-				When:      t.AddDate(0, 0, -y),
+				When:      t.AddDate(0, 0, -x+y),
 				Addr:      "127.0.0." + strconv.Itoa(y),
 				Referrer:  "www.google.com",
 				UserAgent: " Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405",
@@ -672,7 +720,7 @@ func (s slogs) Len() int {
 }
 
 func (s slogs) Less(i, j int) bool {
-	return s[i].When.After(s[j].When)
+	return s[j].When.After(s[i].When)
 }
 
 func (s slogs) Swap(i, j int) {

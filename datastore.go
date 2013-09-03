@@ -37,6 +37,6 @@ type DataStore interface {
 	CountLogs(short string) (int, error)
 
 	// Get the next limit logs of the given short id sorted by create
-	// date (newest first) and offset by the given offset.
+	// date (oldest first) and offset by the given offset.
 	GetLogs(short string, limit, offset int) ([]*Log, error)
 }

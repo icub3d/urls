@@ -58,6 +58,10 @@ type Statistics struct {
 	// The number of clicks this URL has received.
 	Clicks int
 
+	// The time of the most recent Log entry that was used by this
+	// statistic.
+	LastUpdated time.Time
+
 	// A breakdown of the count by referrers. 'Unknown' is used for
 	// clicks without a referrer.
 	Referrers map[string]int
@@ -74,8 +78,9 @@ type Statistics struct {
 	// without a recognizable platform.
 	Platforms map[string]int
 
-	// A breakdown of the count by Hours.
-	Hours map[time.Time]int
+	// A breakdown of the count by Hours. The string is of the form
+	// YYYYMMDDHH in 24 hours format.
+	Hours map[string]int
 }
 
 // NewStatistics creates an empty set of statistics.
@@ -86,6 +91,6 @@ func NewStatistics(short string) *Statistics {
 		Browsers:  make(map[string]int),
 		Countries: make(map[string]int),
 		Platforms: make(map[string]int),
-		Hours:     make(map[time.Time]int),
+		Hours:     make(map[string]int),
 	}
 }
