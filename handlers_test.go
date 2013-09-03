@@ -182,7 +182,7 @@ func TestNewURL(t *testing.T) {
 
 	tests := []struct {
 		long     string
-		short    int
+		short    int64
 		expected string
 		err      error
 		when     int
@@ -553,26 +553,28 @@ func prep() {
 	t, _ := time.Parse("Jan 2 2006", "Jan 2 2013")
 
 	// Add a set of urls.
-	for x := 0; x < 200; x++ {
+	var x int64
+	for x = 0; x < 200; x++ {
 		u := &URL{
 			Short:   IntToShort(x),
-			Long:    "http://longurl.com/" + strconv.Itoa(x) + ".html",
-			Created: t.AddDate(0, 0, -x),
-			Clicks:  x,
+			Long:    "http://longurl.com/" + strconv.Itoa(int(x)) + ".html",
+			Created: t.AddDate(0, 0, -int(x)),
+			Clicks:  int(x),
 		}
 
 		datastore.PutURL(u)
 
 		datastore.PutStatistics(&Statistics{
 			Short:  u.Short,
-			Clicks: x,
+			Clicks: int(x),
 		})
 
 		l := make([]*Log, 0, x)
-		for y := 0; y < x; y++ {
+		var y int64
+		for y = 0; y < x; y++ {
 			l = append(l, &Log{
 				Short:     u.Short,
-				When:      t.AddDate(0, 0, -x+y),
+				When:      t.AddDate(0, 0, int(-x+y)),
 				Addr:      "1.0.0.23",
 				Referrer:  "www.google.com",
 				UserAgent: "Mozilla/5.0 (Windows NT 6.1) Chrome/28.0.1500.95",
@@ -684,7 +686,7 @@ func (ds *mds) PutURL(url *URL) (string, error) {
 	}
 
 	if url.Short == "" {
-		id := IntToShort(ds.count)
+		id := IntToShort(int64(ds.count))
 		ds.count++
 
 		url.Short = id

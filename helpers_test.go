@@ -43,7 +43,7 @@ func TestValidID(t *testing.T) {
 func TestIntToShort(t *testing.T) {
 
 	tests := []struct {
-		id       int
+		id       int64
 		expected string
 	}{
 		// Test some known cases.
@@ -470,7 +470,7 @@ func TestIntToShort(t *testing.T) {
 
 func TestDigit(t *testing.T) {
 	tests := []struct {
-		id       int
+		id       int64
 		expected string
 	}{
 		// Test values in int range.

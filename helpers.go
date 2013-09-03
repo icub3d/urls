@@ -3,6 +3,7 @@ package urls
 import (
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -28,7 +29,7 @@ func ValidID(id string) bool {
 // IntToShort returns the string representation of the given
 // integer. Values less than 0 return 0. Otherwise, it will be some
 // string that includes the characters 0-9, a-z, and A-Z.
-func IntToShort(i int) string {
+func IntToShort(i int64) string {
 	if i <= 0 {
 		return "0"
 	}
@@ -43,9 +44,33 @@ func IntToShort(i int) string {
 	return s
 }
 
+// ShortToInt returns the integer representation of the given short
+// id.
+func ShortToInt(s string) int64 {
+	// Split it into its parts.
+	chars := strings.Split(s, "")
+
+	// Loop through each character.
+	var sum int64
+	l := len(chars) - 1
+	for x := l; x >= 0; x-- {
+		// Increae by the value of the current character * base^i. We are
+		// reading it from back to front, so i = l-x.
+		sum = sum + char(chars[x])*int64(math.Pow(float64(base), float64(l-x)))
+	}
+
+	return sum
+}
+
+// Char converts the given single character string into its integer
+// representation.
+func char(c string) int64 {
+	return 0
+}
+
 // Digit convers the given integer into its representative single
 // digit in the language.
-func digit(i int) string {
+func digit(i int64) string {
 	if i < 10 {
 		i = i + 48 // 48 is where 0-9 starts
 	} else if i >= 10 && i <= 35 {
