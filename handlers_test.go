@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"sort"
 	"strconv"
 	"testing"
@@ -387,6 +388,196 @@ func TestGetStatistics(t *testing.T) {
 	}
 }
 
+func TestCreateStatistics(t *testing.T) {
+	td, _ := time.Parse("Jan 2 15:04:05 2006", "Aug 11 13:41:45 2013")
+
+	// It's going to be easier to do this ourselves.
+	datastore = &mds{
+		urls: map[string]*URL{
+			"1c": &URL{
+				Short:   "1c",
+				Long:    "http://localhost/",
+				Created: td,
+				Clicks:  10,
+			},
+			"1d": &URL{
+				Short:   "1d",
+				Long:    "http://localhost/",
+				Created: td,
+				Clicks:  5,
+			},
+		},
+		stats: map[string]*Statistics{
+			"1c": &Statistics{
+				Short:       "1c",
+				Clicks:      10,
+				LastUpdated: td.AddDate(0, 0, -5),
+				Referrers: map[string]int{
+					"localhost": 7,
+					"127.0.0.1": 3,
+				},
+				Browsers: map[string]int{
+					"Chrome": 7,
+					"Safari": 3,
+				},
+				Countries: map[string]int{
+					"US": 7,
+					"AU": 3,
+				},
+				Platforms: map[string]int{
+					"Linux":    7,
+					"Mac OS X": 3,
+				},
+				Hours: map[string]int{
+					"2013080111": 7,
+					"2013080112": 3,
+				},
+			},
+			"1d": &Statistics{
+				Short:       "1d",
+				Clicks:      5,
+				LastUpdated: td.AddDate(0, 0, -5),
+				Referrers: map[string]int{
+					"localhost": 4,
+					"127.0.0.1": 1,
+				},
+				Browsers: map[string]int{
+					"Chrome": 3,
+					"Safari": 2,
+				},
+				Countries: map[string]int{
+					"US": 4,
+					"AU": 1,
+				},
+				Platforms: map[string]int{
+					"Linux":    1,
+					"Mac OS X": 4,
+				},
+				Hours: map[string]int{
+					"2013080111": 3,
+					"2013080112": 2,
+				},
+			},
+		},
+		logs: map[string][]*Log{
+			"1c": []*Log{
+				&Log{
+					Short:     "1c",
+					When:      td.AddDate(0, 0, -7),
+					Addr:      "1.0.0.45",
+					Referrer:  "127.0.0.1",
+					UserAgent: "Chrome Mac OS X",
+				},
+				&Log{
+					Short:     "1c",
+					When:      td.AddDate(0, 0, -2),
+					Addr:      "1.0.0.45",
+					Referrer:  "127.0.0.1",
+					UserAgent: "Chrome Mac OS X",
+				},
+				&Log{
+					Short:     "1c",
+					When:      td.AddDate(0, 0, -1),
+					Addr:      "1.0.0.43",
+					Referrer:  "localhost",
+					UserAgent: "Chrome Linux",
+				},
+			},
+			"1d": []*Log{
+				&Log{
+					Short:     "1d",
+					When:      td.AddDate(0, 0, -7),
+					Addr:      "1.0.0.45",
+					Referrer:  "127.0.0.1",
+					UserAgent: "Chrome Mac OS X",
+				},
+				&Log{
+					Short:     "1d",
+					When:      td.AddDate(0, 0, -2),
+					Addr:      "1.0.0.45",
+					Referrer:  "127.0.0.1",
+					UserAgent: "Chrome Mac OS X",
+				},
+				&Log{
+					Short:     "1d",
+					When:      td.AddDate(0, 0, -1),
+					Addr:      "1.0.0.43",
+					Referrer:  "localhost",
+					UserAgent: "Chrome Linux",
+				},
+			},
+		},
+	}
+	DS = datastore
+
+	r, _ := http.NewRequest("GET", "/", nil)
+	CreateStatistics(httptest.NewRecorder(), r)
+
+	onec := &Statistics{
+		Short:       "1c",
+		Clicks:      12,
+		LastUpdated: td.AddDate(0, 0, -1),
+		Referrers: map[string]int{
+			"localhost": 8,
+			"127.0.0.1": 4,
+		},
+		Browsers: map[string]int{
+			"Chrome": 9,
+			"Safari": 3,
+		},
+		Countries: map[string]int{
+			"US": 7,
+			"AU": 5,
+		},
+		Platforms: map[string]int{
+			"Linux":    8,
+			"Mac OS X": 4,
+		},
+		Hours: map[string]int{
+			"2013080913": 1,
+			"2013081013": 1,
+			"2013080111": 7,
+			"2013080112": 3,
+		},
+	}
+
+	oned := &Statistics{
+		Short:       "1d",
+		Clicks:      7,
+		LastUpdated: td.AddDate(0, 0, -1),
+		Referrers: map[string]int{
+			"localhost": 5,
+			"127.0.0.1": 2,
+		},
+		Browsers: map[string]int{
+			"Chrome": 5,
+			"Safari": 2,
+		},
+		Countries: map[string]int{
+			"US": 4,
+			"AU": 3,
+		},
+		Platforms: map[string]int{
+			"Linux":    2,
+			"Mac OS X": 5,
+		},
+		Hours: map[string]int{
+			"2013080913": 1,
+			"2013081013": 1,
+			"2013080111": 3,
+			"2013080112": 2,
+		},
+	}
+
+	if !reflect.DeepEqual(onec, datastore.stats["1c"]) {
+		t.Errorf("Onec not equal: %v %v", onec, datastore.stats["1c"])
+	}
+
+	if !reflect.DeepEqual(oned, datastore.stats["1d"]) {
+		t.Errorf("Oned not equal: %v %v", oned, datastore.stats["1d"])
+	}
+}
+
 func TestRedirect(t *testing.T) {
 	prep()
 
@@ -488,9 +679,9 @@ func prep() {
 			l = append(l, &Log{
 				Short:     u.Short,
 				When:      t.AddDate(0, 0, -x+y),
-				Addr:      "127.0.0." + strconv.Itoa(y),
+				Addr:      "1.0.0.23",
 				Referrer:  "www.google.com",
-				UserAgent: " Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405",
+				UserAgent: "Mozilla/5.0 (Windows NT 6.1) Chrome/28.0.1500.95",
 			})
 		}
 

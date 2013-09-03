@@ -765,6 +765,10 @@ func TestDetermineCountry(t *testing.T) {
 			country: "AU",
 		},
 		{
+			addr:    "206.251.44.94",
+			country: "US",
+		},
+		{
 			addr:    "190.109.96.35",
 			country: "CO",
 		},

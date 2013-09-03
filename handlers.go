@@ -216,6 +216,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 				offset, err)
 			return
 		}
+
 		if len(urls) == 0 {
 			return
 		}
@@ -252,6 +253,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 			// Now loop through all the Logs until we get to the last time
 			// the log was updated.
 			logOffset := 0
+			var latest time.Time
 			for {
 				logs, err := DS.GetLogs(url.Short, 100, logOffset)
 				if err != nil {
@@ -262,10 +264,18 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 				}
 				logOffset += 100
 
+				if len(logs) == 0 {
+					break
+				}
+
 				for _, log := range logs {
 					if stats.LastUpdated.After(log.When) {
-						// We have reached the end, so we are finished.
-						break
+						// We have already processed this log.
+						continue
+					}
+
+					if log.When.After(latest) {
+						latest = log.When
 					}
 
 					browser, platform := parseUserAgent(log.UserAgent)
@@ -275,21 +285,20 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 						log.When.Hour())
 
 					// Update the values.
-					stats.Referrers[log.Referrer] += 1
-					stats.Browsers[browser] += 1
-					stats.Countries[country] += 1
-					stats.Platforms[platform] += 1
-					stats.Hours[hour] += 1
+					stats.Referrers[log.Referrer] = stats.Referrers[log.Referrer] + 1
+					stats.Browsers[browser] = stats.Browsers[browser] + 1
+					stats.Countries[country] = stats.Countries[country] + 1
+					stats.Platforms[platform] = stats.Platforms[platform] + 1
+					stats.Hours[hour] = stats.Hours[hour] + 1
 
 					// Update the clicks.
+					stats.Clicks += 1
 					url.Clicks += 1
-
-					// Update the date.
-					if log.When.After(stats.LastUpdated) {
-						stats.LastUpdated = log.When
-					}
 				}
 			}
+
+			// Set the update time to the newest time.
+			stats.LastUpdated = latest
 
 			// Put the Url for the Clicks count.
 			DS.PutURL(url)
