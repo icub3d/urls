@@ -532,6 +532,75 @@ func TestDigit(t *testing.T) {
 
 }
 
+func TestChar(t *testing.T) {
+	tests := []struct {
+		result int64
+		id     string
+	}{
+		// Test values in int range.
+		{
+			result: 0,
+			id:     "0",
+		},
+		{
+			result: 5,
+			id:     "5",
+		},
+		{
+			result: 9,
+			id:     "9",
+		},
+
+		// Test values in A-Z range.
+		{
+			result: 10,
+			id:     "A",
+		},
+		{
+			result: 25,
+			id:     "P",
+		},
+		{
+			result: 35,
+			id:     "Z",
+		},
+
+		// Test values in a-z range.
+		{
+			result: 36,
+			id:     "a",
+		},
+		{
+			result: 51,
+			id:     "p",
+		},
+		{
+			result: 61,
+			id:     "z",
+		},
+
+		// Test an invalid id.
+		{
+			result: 0,
+			id:     "-",
+		},
+
+		{
+			result: 0,
+			id:     "",
+		},
+	}
+
+	for k, test := range tests {
+		result := char(test.id)
+		if result != test.result {
+			t.Errorf("Test %v: expected %v from char(%v), but got %v",
+				k, test.result, test.id, result)
+		}
+	}
+
+}
+
 func TestParamGetInt(t *testing.T) {
 	tests := []struct {
 		q        url.Values
@@ -779,6 +848,434 @@ func TestDetermineCountry(t *testing.T) {
 		if country != test.country {
 			t.Errorf("Test %v: expected country '%v' but got '%v': %v",
 				k, test.country, country, test.addr)
+		}
+	}
+}
+
+func TestShortToInt(t *testing.T) {
+
+	tests := []struct {
+		results int64
+		id      string
+	}{
+		// Test some known cases.
+		{
+			results: 0,
+			id:      "0",
+		},
+		{
+			results: 0,
+			id:      "0",
+		},
+
+		// Test some random cases.
+		{
+			results: 25883599,
+			id:      "1kbVP",
+		},
+		{
+			results: 13992492,
+			id:      "wi5M",
+		},
+		{
+			results: 24025617,
+			id:      "1co9x",
+		},
+		{
+			results: 10702,
+			id:      "2mc",
+		},
+		{
+			results: 56351835,
+			id:      "3oRgZ",
+		},
+		{
+			results: 60799965,
+			id:      "476qb",
+		},
+		{
+			results: 30313280,
+			id:      "23Brs",
+		},
+		{
+			results: 11612025,
+			id:      "mioj",
+		},
+		{
+			results: 19568944,
+			id:      "1K6m8",
+		},
+		{
+			results: 23213121,
+			id:      "1ZOnB",
+		},
+		{
+			results: 36808014,
+			id:      "2URRe",
+		},
+		{
+			results: 73173873,
+			id:      "4x1rl",
+		},
+		{
+			results: 33140829,
+			id:      "2F3RV",
+		},
+		{
+			results: 49448467,
+			id:      "3LTnv",
+		},
+		{
+			results: 23215655,
+			id:      "1ZPS3",
+		},
+		{
+			results: 31857603,
+			id:      "29fcJ",
+		},
+		{
+			results: 83196636,
+			id:      "5d5FE",
+		},
+		{
+			results: 64932637,
+			id:      "4ORwb",
+		},
+		{
+			results: 62056666,
+			id:      "4CNly",
+		},
+		{
+			results: 53483481,
+			id:      "3cPUn",
+		},
+		{
+			results: 6655522,
+			id:      "RvP8",
+		},
+		{
+			results: 20680798,
+			id:      "1Om1G",
+		},
+		{
+			results: 41750143,
+			id:      "2pB7P",
+		},
+		{
+			results: 3023948,
+			id:      "CgfM",
+		},
+		{
+			results: 10194536,
+			id:      "gm40",
+		},
+		{
+			results: 60294934,
+			id:      "44zSw",
+		},
+		{
+			results: 1985607,
+			id:      "8KXv",
+		},
+		{
+			results: 89591901,
+			id:      "63uwf",
+		},
+		{
+			results: 21746119,
+			id:      "1TF9r",
+		},
+		{
+			results: 66617413,
+			id:      "4VWEP",
+		},
+		{
+			results: 14147405,
+			id:      "xMNx",
+		},
+		{
+			results: 50948628,
+			id:      "3Rm44",
+		},
+		{
+			results: 67471159,
+			id:      "4Z6KV",
+		},
+		{
+			results: 57769279,
+			id:      "3uOQZ",
+		},
+		{
+			results: 80925232,
+			id:      "5TYLg",
+		},
+		{
+			results: 51234358,
+			id:      "3SyOc",
+		},
+		{
+			results: 21762868,
+			id:      "1TJW0",
+		},
+		{
+			results: 85775710,
+			id:      "5nuBC",
+		},
+		{
+			results: 2068155,
+			id:      "8g1L",
+		},
+		{
+			results: 38720804,
+			id:      "2cT36",
+		},
+		{
+			results: 40975171,
+			id:      "2lvVr",
+		},
+		{
+			results: 75084343,
+			id:      "552rn",
+		},
+		{
+			results: 69963207,
+			id:      "4jYcp",
+		},
+		{
+			results: 68132074,
+			id:      "4bsGQ",
+		},
+		{
+			results: 77810961,
+			id:      "5GUBV",
+		},
+		{
+			results: 49361381,
+			id:      "3L79J",
+		},
+		{
+			results: 68236415,
+			id:      "4cJPL",
+		},
+		{
+			results: 67175877,
+			id:      "4XrVt",
+		},
+		{
+			results: 65592921,
+			id:      "4RDiL",
+		},
+		{
+			results: 41238522,
+			id:      "2n21S",
+		},
+		{
+			results: 94283385,
+			id:      "6NbPl",
+		},
+		{
+			results: 41956665,
+			id:      "2q2qP",
+		},
+		{
+			results: 37707752,
+			id:      "2YDVY",
+		},
+		{
+			results: 68610149,
+			id:      "4dsdJ",
+		},
+		{
+			results: 28209392,
+			id:      "1uMYC",
+		},
+		{
+			results: 38691855,
+			id:      "2cLWB",
+		},
+		{
+			results: 99522769,
+			id:      "6jaPx",
+		},
+		{
+			results: 69682314,
+			id:      "4iNYI",
+		},
+		{
+			results: 16162743,
+			id:      "15ofP",
+		},
+		{
+			results: 38386419,
+			id:      "2b43n",
+		},
+		{
+			results: 42666958,
+			id:      "2t1ck",
+		},
+		{
+			results: 98849355,
+			id:      "6glER",
+		},
+		{
+			results: 17320289,
+			id:      "1AfnV",
+		},
+		{
+			results: 25808476,
+			id:      "1kHxk",
+		},
+		{
+			results: 91304382,
+			id:      "6B6RK",
+		},
+		{
+			results: 33144228,
+			id:      "2F4KK",
+		},
+		{
+			results: 61813865,
+			id:      "4BMbp",
+		},
+		{
+			results: 90135250,
+			id:      "66CIM",
+		},
+		{
+			results: 84605551,
+			id:      "5izlf",
+		},
+		{
+			results: 75446667,
+			id:      "56Z7j",
+		},
+		{
+			results: 35347002,
+			id:      "2OJMw",
+		},
+		{
+			results: 84988268,
+			id:      "5kbKW",
+		},
+		{
+			results: 344523,
+			id:      "1Rcp",
+		},
+		{
+			results: 34542600,
+			id:      "2Kw6i",
+		},
+		{
+			results: 11579636,
+			id:      "maOK",
+		},
+		{
+			results: 50145891,
+			id:      "3OPEh",
+		},
+		{
+			results: 97880514,
+			id:      "6chBy",
+		},
+		{
+			results: 44866383,
+			id:      "32FnL",
+		},
+		{
+			results: 29717072,
+			id:      "20glc",
+		},
+		{
+			results: 39625641,
+			id:      "2gGRF",
+		},
+		{
+			results: 9977484,
+			id:      "frbA",
+		},
+		{
+			results: 38415131,
+			id:      "2bBWt",
+		},
+		{
+			results: 25011862,
+			id:      "1gwj8",
+		},
+		{
+			results: 4742753,
+			id:      "Jto1",
+		},
+		{
+			results: 30922277,
+			id:      "25kIP",
+		},
+		{
+			results: 18561924,
+			id:      "1Fsns",
+		},
+		{
+			results: 86782082,
+			id:      "5s7z0",
+		},
+		{
+			results: 42781204,
+			id:      "2tVLQ",
+		},
+		{
+			results: 21860274,
+			id:      "1Tir4",
+		},
+		{
+			results: 82510071,
+			id:      "5aCdb",
+		},
+		{
+			results: 37078850,
+			id:      "2VZty",
+		},
+		{
+			results: 55022721,
+			id:      "3irvF",
+		},
+		{
+			results: 51293216,
+			id:      "3TDhw",
+		},
+		{
+			results: 90557044,
+			id:      "67y1U",
+		},
+		{
+			results: 94867994,
+			id:      "6Q3Uw",
+		},
+		{
+			results: 26714036,
+			id:      "1o5XY",
+		},
+		{
+			results: 11013256,
+			id:      "kD3A",
+		},
+		{
+			results: 37169131,
+			id:      "2VxO7",
+		},
+		{
+			results: 7988373,
+			id:      "XW8j",
+		},
+		{
+			results: 52386136,
+			id:      "3Xo1g",
+		},
+	}
+
+	for k, test := range tests {
+		result := ShortToInt(test.id)
+		if result != test.results {
+			t.Errorf("Test %v: int %v from ShortToInt(%v), but got %v",
+				k, test.id, test.results, result)
 		}
 	}
 }

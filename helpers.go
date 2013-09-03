@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -65,6 +66,19 @@ func ShortToInt(s string) int64 {
 // Char converts the given single character string into its integer
 // representation.
 func char(c string) int64 {
+	r, s := utf8.DecodeLastRuneInString(c)
+	if s != 1 {
+		return 0
+	}
+
+	if r >= 48 && r <= 57 {
+		return int64(r - 48)
+	} else if r >= 65 && r <= 90 {
+		return int64(r - 55)
+	} else if r >= 97 && r <= 122 {
+		return int64(r - 61)
+	}
+
 	return 0
 }
 
