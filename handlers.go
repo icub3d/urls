@@ -206,10 +206,13 @@ func GetStatistics(w http.ResponseWriter, r *http.Request) {
 // are checking those (and you probably should), you can wrap this
 // handler in another handler.
 func CreateStatistics(w http.ResponseWriter, r *http.Request) {
+	// These are the number of records we'll get per loop.
+	const LIMIT = 1000
+
 	offset := 0
 	for {
 		// Fetch the next set of URLs.
-		urls, err := DS.GetURLs(100, offset)
+		urls, err := DS.GetURLs(LIMIT, offset)
 		if err != nil {
 			log.Printf(
 				"GetURLs(100, %v) during CreateStatistics failed. Stopping with: %v",
@@ -220,7 +223,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 		if len(urls) == 0 {
 			return
 		}
-		offset += 100
+		offset += LIMIT
 
 		// Loop through each URL.
 		for _, url := range urls {
@@ -255,14 +258,14 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 			logOffset := 0
 			var latest time.Time
 			for {
-				logs, err := DS.GetLogs(url.Short, 100, logOffset)
+				logs, err := DS.GetLogs(url.Short, LIMIT, logOffset)
 				if err != nil {
 					log.Printf(
 						"GetLogs(%v, 100, %v) failed. Stopping: %v",
 						url.Short, logOffset, err)
 					return
 				}
-				logOffset += 100
+				logOffset += LIMIT
 
 				if len(logs) == 0 {
 					break
