@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// HandlerFunc is a handler for the URL system.
+type HandlerFunc func(ds DataStore, w http.ResponseWriter, r *http.Request)
+
 // GetURLs is a handler func for getting a list of urls sorted by
 // create date. If limit and offset are query parameters, they are
 // used to limit the return set and offset from the beginning. Offset
