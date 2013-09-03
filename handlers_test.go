@@ -605,6 +605,14 @@ func TestRedirect(t *testing.T) {
 			expected: `not found`,
 		},
 
+		// Test a not valid.
+		{
+			id:       "this is invalid",
+			location: "",
+			code:     http.StatusNotFound,
+			expected: `not found`,
+		},
+
 		// Test an error
 		{
 			id:       "123",

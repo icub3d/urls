@@ -114,6 +114,13 @@ func NewURL(w http.ResponseWriter, r *http.Request) {
 func DeleteURL(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
+	if !ValidID(id) {
+		// An invalid ID should return a not found.
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+		return
+	}
+
 	err := DS.DeleteURL(id)
 	if err != nil {
 		if err != nil {
@@ -184,6 +191,13 @@ func CountLogs(w http.ResponseWriter, r *http.Request) {
 // handler in another handler.
 func GetStatistics(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
+
+	if !ValidID(id) {
+		// An invalid ID should return a not found.
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+		return
+	}
 
 	// Get the data.
 	u, err := DS.GetStatistics(id)
@@ -319,6 +333,13 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 // This would normally map to something like GET /{id}.
 func Redirect(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
+
+	if !ValidID(id) {
+		// An invalid ID should return a not found.
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+		return
+	}
 
 	// Get the URL in question.
 	u, err := DS.GetURL(id)
