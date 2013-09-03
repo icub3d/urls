@@ -134,55 +134,6 @@ func DeleteURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// GetLogs is a handler func for getting a list of logs for a short id
-// sorted by create date. If limit and offset are query parameters,
-// they are used to limit the return set and offset from the
-// beginning. Offset defaults to 0 and limit defaults to 20. The max
-// offset is 100.
-//
-// This would normally map to something like GET /logs/{id}. It does not
-// check any session or admin cookies or anything like that. If you
-// are checking those (and you probably should), you can wrap this
-// handler in another handler.
-func GetLogs(w http.ResponseWriter, r *http.Request) {
-	id := path.Base(r.URL.Path)
-
-	limit, offset := getLimitOffset(r.URL.Query())
-
-	// Get the data.
-	u, err := DS.GetLogs(id, limit, offset)
-	if err != nil {
-		log.Printf("GetLogs(%v, %v, %v) failed with: %v", id, limit, offset, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oops"))
-		return
-	}
-
-	marshalAndWrite(w, u)
-}
-
-// CountLogs is a handler func that returns the number of logs in the
-// system for the given Id. It returns json in the form: {"count":%v}.
-//
-// This would normally map to something like GET /count/logs/{id}. It does
-// not check any session or admin cookies or anything like that. If
-// you are checking those (and you probably should), you can wrap this
-// handler in another handler.
-func CountLogs(w http.ResponseWriter, r *http.Request) {
-	id := path.Base(r.URL.Path)
-
-	c, err := DS.CountLogs(id)
-	if err != nil {
-		log.Printf("CountLogs(%v) failed with: %v", id, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oops"))
-		return
-	}
-
-	w.Write([]byte(fmt.Sprintf(`{"count":%v}`, c)))
-
-}
-
 // GetStatistics is a handler func for getting the statistics of a URL.
 //
 // This would normally map to something like GET /stats/{id}. It does not
