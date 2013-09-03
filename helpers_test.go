@@ -27,7 +27,7 @@ func TestValidID(t *testing.T) {
 		// Test a valid id.
 		{
 			id:       "9A8b1hdkalKAHgkalhg",
-			expected: false,
+			expected: true,
 		},
 	}
 

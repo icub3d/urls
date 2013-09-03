@@ -12,7 +12,7 @@ import (
 
 var (
 	// re is the regular expression used to check for valid ids
-	re = regexp.MustCompile("^[:alnum:]+$")
+	re = regexp.MustCompile("^[0-9a-zA-Z]+$")
 )
 
 const (
