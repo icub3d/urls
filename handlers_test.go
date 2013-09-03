@@ -13,10 +13,8 @@ import (
 	"time"
 )
 
-var datastore *mds
-
 func TestGetUrls(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		limit  int
@@ -59,10 +57,10 @@ func TestGetUrls(t *testing.T) {
 		},
 	}
 
-	a := datastore.URLsArray()
+	a := ds.URLsArray()
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		w := httptest.NewRecorder()
@@ -70,7 +68,7 @@ func TestGetUrls(t *testing.T) {
 			fmt.Sprintf("http://localhost/admin/urls?limit=%v&offset=%v",
 				test.limit, test.offset), nil)
 
-		GetURLs(w, r)
+		GetURLs(ds, w, r)
 
 		enc, _ := json.Marshal(a[test.start:test.end])
 
@@ -88,7 +86,7 @@ func TestGetUrls(t *testing.T) {
 }
 
 func TestCountUrls(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		err      error
@@ -110,13 +108,13 @@ func TestCountUrls(t *testing.T) {
 
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://localhost/admin/count/urls", nil)
 
-		CountURLs(w, r)
+		CountURLs(ds, w, r)
 
 		body := w.Body.String()
 
@@ -128,7 +126,7 @@ func TestCountUrls(t *testing.T) {
 }
 
 func TestDeleteURL(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		id       string
@@ -156,13 +154,13 @@ func TestDeleteURL(t *testing.T) {
 
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://localhost/"+test.id, nil)
 
-		DeleteURL(w, r)
+		DeleteURL(ds, w, r)
 
 		body := w.Body.String()
 		if test.expected != body {
@@ -178,7 +176,7 @@ func TestDeleteURL(t *testing.T) {
 }
 
 func TestNewURL(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		long     string
@@ -205,7 +203,7 @@ func TestNewURL(t *testing.T) {
 
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		var b bytes.Buffer
@@ -213,7 +211,7 @@ func TestNewURL(t *testing.T) {
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("POST", "http://localhost/urls", &b)
 
-		NewURL(w, r)
+		NewURL(ds, w, r)
 
 		if test.err != nil {
 			body := w.Body.String()
@@ -232,7 +230,7 @@ func TestNewURL(t *testing.T) {
 }
 
 func TestGetStatistics(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		id       string
@@ -257,7 +255,7 @@ func TestGetStatistics(t *testing.T) {
 
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		w := httptest.NewRecorder()
@@ -265,7 +263,7 @@ func TestGetStatistics(t *testing.T) {
 			fmt.Sprintf("http://localhost/admin/stats/%v",
 				test.id), nil)
 
-		GetStatistics(w, r)
+		GetStatistics(ds, w, r)
 
 		if w.Body.String() != test.expected {
 			t.Errorf("Test %v: bodies not equal: expecting %v, got %v",
@@ -278,7 +276,7 @@ func TestCreateStatistics(t *testing.T) {
 	td, _ := time.Parse("Jan 2 15:04:05 2006", "Aug 11 13:41:45 2013")
 
 	// It's going to be easier to do this ourselves.
-	datastore = &mds{
+	ds := &mds{
 		urls: map[string]*URL{
 			"1c": &URL{
 				Short:   "1c",
@@ -394,10 +392,9 @@ func TestCreateStatistics(t *testing.T) {
 			},
 		},
 	}
-	DS = datastore
 
 	r, _ := http.NewRequest("GET", "/", nil)
-	CreateStatistics(httptest.NewRecorder(), r)
+	CreateStatistics(ds, httptest.NewRecorder(), r)
 
 	onec := &Statistics{
 		Short:       "1c",
@@ -455,17 +452,17 @@ func TestCreateStatistics(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(onec, datastore.stats["1c"]) {
-		t.Errorf("Onec not equal: %v %v", onec, datastore.stats["1c"])
+	if !reflect.DeepEqual(onec, ds.stats["1c"]) {
+		t.Errorf("Onec not equal: %v %v", onec, ds.stats["1c"])
 	}
 
-	if !reflect.DeepEqual(oned, datastore.stats["1d"]) {
-		t.Errorf("Oned not equal: %v %v", oned, datastore.stats["1d"])
+	if !reflect.DeepEqual(oned, ds.stats["1d"]) {
+		t.Errorf("Oned not equal: %v %v", oned, ds.stats["1d"])
 	}
 }
 
 func TestRedirect(t *testing.T) {
-	prep()
+	ds := prep()
 
 	tests := []struct {
 		id       string
@@ -512,13 +509,13 @@ func TestRedirect(t *testing.T) {
 
 	for k, test := range tests {
 		if test.err != nil {
-			datastore.SetError(test.err, test.when)
+			ds.SetError(test.err, test.when)
 		}
 
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://localhost/"+test.id, nil)
 
-		Redirect(w, r)
+		Redirect(ds, w, r)
 
 		body := w.Body.String()
 		if test.expected != body {
@@ -541,14 +538,14 @@ func TestRedirect(t *testing.T) {
 	}
 }
 
-func prep() {
-	datastore = &mds{
+func prep() *mds {
+	ds := &mds{
 		urls:  make(map[string]*URL),
 		stats: make(map[string]*Statistics),
 		logs:  make(map[string][]*Log),
 	}
 
-	datastore.count = 1000
+	ds.count = 1000
 
 	t, _ := time.Parse("Jan 2 2006", "Jan 2 2013")
 
@@ -562,9 +559,9 @@ func prep() {
 			Clicks:  int(x),
 		}
 
-		datastore.PutURL(u)
+		ds.PutURL(u)
 
-		datastore.PutStatistics(&Statistics{
+		ds.PutStatistics(&Statistics{
 			Short:  u.Short,
 			Clicks: int(x),
 		})
@@ -581,11 +578,11 @@ func prep() {
 			})
 		}
 
-		datastore.logs[u.Short] = l
+		ds.logs[u.Short] = l
 
 	}
 
-	DS = datastore
+	return ds
 }
 
 // mds implements a DataStore in memory suitable for testing.

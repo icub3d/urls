@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-var (
-	// DS is the datastore the handlers will use. You should set this to
-	// your implementation or expect errors.
-	DS DataStore
-)
-
 // GetURLs is a handler func for getting a list of urls sorted by
 // create date. If limit and offset are query parameters, they are
 // used to limit the return set and offset from the beginning. Offset
@@ -25,12 +19,12 @@ var (
 // check any session or admin cookies or anything like that. If you
 // are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func GetURLs(w http.ResponseWriter, r *http.Request) {
+func GetURLs(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	// Get the query parameters.
 	limit, offset := getLimitOffset(r.URL.Query())
 
 	// Get the data.
-	u, err := DS.GetURLs(limit, offset)
+	u, err := ds.GetURLs(limit, offset)
 	if err != nil {
 		log.Printf("GetUrls(%v, %v) failed with: %v", limit, offset, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -48,8 +42,8 @@ func GetURLs(w http.ResponseWriter, r *http.Request) {
 // not check any session or admin cookies or anything like that. If
 // you are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func CountURLs(w http.ResponseWriter, r *http.Request) {
-	c, err := DS.CountURLs()
+func CountURLs(ds DataStore, w http.ResponseWriter, r *http.Request) {
+	c, err := ds.CountURLs()
 	if err != nil {
 		log.Printf("CountUrls() failed with: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -69,7 +63,7 @@ func CountURLs(w http.ResponseWriter, r *http.Request) {
 // does not check any session or admin cookies or anything like
 // that. If you are checking those (and you probably should), you can
 // wrap this handler in another handler.
-func NewURL(w http.ResponseWriter, r *http.Request) {
+func NewURL(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	// Get the posted data.
 	u := &URL{}
 	body, err := ioutil.ReadAll(r.Body)
@@ -94,7 +88,7 @@ func NewURL(w http.ResponseWriter, r *http.Request) {
 	u.Created = time.Now()
 
 	// Put the URL.
-	_, err = DS.PutURL(u)
+	_, err = ds.PutURL(u)
 	if err != nil {
 		log.Printf("PutURL(%v) failed on body: %v", u, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -111,7 +105,7 @@ func NewURL(w http.ResponseWriter, r *http.Request) {
 // does not check any session or admin cookies or anything like
 // that. If you are checking those (and you probably should), you can
 // wrap this handler in another handler.
-func DeleteURL(w http.ResponseWriter, r *http.Request) {
+func DeleteURL(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
 	if !ValidID(id) {
@@ -121,7 +115,7 @@ func DeleteURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := DS.DeleteURL(id)
+	err := ds.DeleteURL(id)
 	if err != nil {
 		if err != nil {
 			log.Printf("GetUrl(%v) failed with: %v", id, err)
@@ -140,7 +134,7 @@ func DeleteURL(w http.ResponseWriter, r *http.Request) {
 // check any session or admin cookies or anything like that. If you
 // are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func GetStatistics(w http.ResponseWriter, r *http.Request) {
+func GetStatistics(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
 	if !ValidID(id) {
@@ -151,7 +145,7 @@ func GetStatistics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the data.
-	u, err := DS.GetStatistics(id)
+	u, err := ds.GetStatistics(id)
 	if err != nil {
 		log.Printf("GetStatistics(%v) failed with: %v", id, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -170,14 +164,14 @@ func GetStatistics(w http.ResponseWriter, r *http.Request) {
 // check any session or admin cookies or anything like that. If you
 // are checking those (and you probably should), you can wrap this
 // handler in another handler.
-func CreateStatistics(w http.ResponseWriter, r *http.Request) {
+func CreateStatistics(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	// These are the number of records we'll get per loop.
 	const LIMIT = 1000
 
 	offset := 0
 	for {
 		// Fetch the next set of URLs.
-		urls, err := DS.GetURLs(LIMIT, offset)
+		urls, err := ds.GetURLs(LIMIT, offset)
 		if err != nil {
 			log.Printf(
 				"GetURLs(100, %v) during CreateStatistics failed. Stopping with: %v",
@@ -193,7 +187,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 		// Loop through each URL.
 		for _, url := range urls {
 			// Get the current stats for this url.
-			stats, err := DS.GetStatistics(url.Short)
+			stats, err := ds.GetStatistics(url.Short)
 			if err != nil {
 				log.Printf(
 					"GetStatistics(%v) failed. Skipping this URL: %v",
@@ -223,7 +217,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 			logOffset := 0
 			var latest time.Time
 			for {
-				logs, err := DS.GetLogs(url.Short, LIMIT, logOffset)
+				logs, err := ds.GetLogs(url.Short, LIMIT, logOffset)
 				if err != nil {
 					log.Printf(
 						"GetLogs(%v, 100, %v) failed. Stopping: %v",
@@ -269,10 +263,10 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 			stats.LastUpdated = latest
 
 			// Put the Url for the Clicks count.
-			DS.PutURL(url)
+			ds.PutURL(url)
 
 			// Put the Statistics.
-			DS.PutStatistics(stats)
+			ds.PutStatistics(stats)
 		}
 	}
 }
@@ -282,7 +276,7 @@ func CreateStatistics(w http.ResponseWriter, r *http.Request) {
 // short id isn't found, a 404 not found is returned.
 //
 // This would normally map to something like GET /{id}.
-func Redirect(w http.ResponseWriter, r *http.Request) {
+func Redirect(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.Path)
 
 	if !ValidID(id) {
@@ -293,7 +287,7 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the URL in question.
-	u, err := DS.GetURL(id)
+	u, err := ds.GetURL(id)
 	if err != nil {
 		if err != nil {
 			log.Printf("GetUrl(%v) failed with: %v", id, err)
@@ -312,7 +306,7 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 
 	// Create a Log entry.
 	l := NewLog(id, r)
-	err = DS.LogClick(l)
+	err = ds.LogClick(l)
 	if err != nil {
 		// We shouldn't error out here but we should log it.
 		log.Printf("LogClick(%v) failed (not likely recorded with: %v",
