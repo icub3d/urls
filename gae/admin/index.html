@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-ng-app="urls">
+	<head>
+		<!--
+				Copyright 2013 Joshua Marsh. All rights reserved.
+				Use of this source code is governed by a BSD-style
+				license that can be found in the LICENSE file.
+			-->
+		<meta charset="utf-8">
+		<title>URLs</title>
+		<meta name="description" content="Urls App">
+		<meta name="author" content="Joshua Marsh">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="shortcut icon" href="/favicon.ico" />
+
+		<!--[if lt IE 9]>
+				<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+				<![endif]-->
+
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" 
+					rel="stylesheet">
+
+		<!-- APP CSS -->
+		<link href="/admin/main.css" rel="stylesheet">
+		<!-- APP CSS -->
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+		<!-- APP JS -->
+		<script src="/admin/main.js"></script>
+		<!-- APP JS -->
+
+	</head>
+	<body>
+		<div class="container">
+			<!-- This is the top navigation bar. -->
+			<div class="navbar navbar-default" role="navigation">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" 
+									data-toggle="collapse" data-target=".navbar-ex1-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#/">URLs</a>
+				</div>
+				<div class="collapse navbar-collapse navbar-ex1-collapse">
+					<ul class="nav navbar-nav"></ul>
+					<ul class="nav navbar-nav navbar-right" data-ng-controller="UserCtrl">
+						<li><p class="navbar-text">Hello, {{user.Email}}!</p></li>
+						<li><a href="{{user.LogoutURL}}">Logout</a></li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- The main content of the page. -->
+			<div data-ng-view></div>
+		</div>
+
+		<!-- EMBED HERE -->
+		<script type="text/ng-template" id="partials/urls.html">
+			<div data-ng-controller="UrlsCtrl">
+				<div class="row">
+					<div class="col-md-6">
+						<form class="form-inline" role="form" id="newurl">
+							<div class="form-group">
+								<label class="sr-only" for="Long">URL</label>
+								<input type="url" class="form-control" 
+											 data-ng-model="url" id="Long" placeholder="URL">
+							</div>
+							<button type="submit" data-ng-click="create()" 
+											class="btn btn-default">Shorten</button>
+						</form>
+					</div>
+					<div class="col-md-6" id="pagination">
+						<ul class="pagination">
+							<li id="prev"><a data-ng-click="prev()">&laquo;</a></li>
+							<li><a class="disabled">{{low}} - {{high}} of {{count}}</a></li>
+							<li id="next"><a data-ng-click="next()">&raquo;</a></li>
+						</ul>
+					</div>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead>
+							<tr>
+								<th>Long URL</th>
+								<th>Short URL</th>
+								<th>Created</th>
+								<th>Clicks</th>
+								<th>&nbsp;</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr data-ng-show="urls.length < 1">
+								<td colspan="5" class="center">No Urls. Create one!</td>
+							</tr>
+							<tr data-ng-repeat="url in urls">
+								<td><div>{{url.Long}}</div></td>
+								<td><a href="{{prefix}}{{url.Short}}">{{prefix}}{{url.Short}}</a></td>
+								<td>{{url.Created | date:'yyyy-MM-dd'}}</td>
+								<td>{{url.Clicks}}</td>
+								<td>
+									<a type="button" class="btn btn-link" href="#/{{url.Short}}">Details</a>
+									<button type="button" class="btn btn-danger" 
+													data-ng-click="del(url.Short)">Delete</button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/ng-template" id="partials/stats.html">
+			Stats go here!
+		</script>
+		
+		
+	</body>
+</html>

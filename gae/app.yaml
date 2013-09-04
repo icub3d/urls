@@ -5,7 +5,38 @@ runtime: go
 api_version: go1
 
 handlers:
-  - url: /admin/.*
+  - url: /admin/
+    static_files: admin/index.html
+    upload: admin/index.html
+    login: required
+    mime_type: text/html; charset=utf-8
+
+  - url: /admin/(.*\.css)
+    mime_type: text/css; charset=utf-8
+    static_files: admin/\1
+    upload: admin/(.*\.css)
+ 
+  - url: /admin/(.*\.html)
+    mime_type: text/html; charset=utf-8
+    static_files: admin/\1
+    upload: admin/(.*\.html)
+
+  - url: /(.*\.ico)
+    mime_type: image/x-icon; charset=utf-8
+    static_files: admin/\1
+    upload: admin/(.*\.ico)
+    
+  - url: /admin/(.*\.ico)
+    mime_type: image/x-icon; charset=utf-8
+    static_files: admin/\1
+    upload: admin/(.*\.ico)
+
+  - url: /admin/(.*\.js)
+    mime_type: text/javascript; charset=utf-8
+    static_files: admin/\1
+    upload: admin/(.*\.js)
+
+  - url: /api/.*
     login: admin
     script: _go_app
     

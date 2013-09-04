@@ -1,0 +1,18 @@
+.table tbody>tr>td {
+		vertical-align: middle;
+}
+
+.center {
+		text-align: center;
+}
+
+@media (min-width: 992px) {
+		#pagination ul {
+				margin-top: 0px;
+				margin-bottm: 0px;
+		}
+
+		#pagination {
+				text-align: right;
+		}
+}

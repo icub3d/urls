@@ -282,7 +282,12 @@ func updateStats(ds DataStore, url *URL, r *http.Request) {
 
 	now := time.Now()
 
+	// Set the various values we'll save.
 	referrer := r.Header.Get("Referer")
+	if referrer == "" {
+		referrer = "Unknown"
+	}
+
 	browser, platform := parseUserAgent(r.Header.Get("User-Agent"))
 	country := determineCountry(r.RemoteAddr)
 	hour := fmt.Sprintf("%04d%02d%02d%02d",

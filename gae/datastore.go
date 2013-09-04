@@ -15,7 +15,7 @@ const (
 	logKind = "Log"
 
 	// The Kind for Statistics.
-	statKind = "Statistics"
+	statsKind = "Stats"
 )
 
 // DataStore implements the urls.DataStore interface
@@ -39,7 +39,7 @@ func (ds *DataStore) GetURLs(limit, offset int) ([]*urls.URL, error) {
 		Offset(offset).Limit(limit)
 
 	us := make([]*urls.URL, 0, limit)
-	_, err := q.GetAll(ds.cxt, *us)
+	_, err := q.GetAll(ds.cxt, &us)
 	return us, err
 }
 
@@ -48,7 +48,9 @@ func (ds *DataStore) GetURL(id string) (*urls.URL, error) {
 
 	var u urls.URL
 	err := datastore.Get(ds.cxt, key, &u)
-	if err != nil {
+	if err == datastore.ErrNoSuchEntity {
+		return nil, urls.ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -58,7 +60,16 @@ func (ds *DataStore) GetURL(id string) (*urls.URL, error) {
 func (ds *DataStore) DeleteURL(id string) error {
 	key := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
 
-	// TODO we need to delete the stats as well as the Logs.
+	// Delete the logs.
+	iter := datastore.NewQuery(logKind).Ancestor(key).Run(ds.cxt)
+	var l urls.Log
+	for k, err := iter.Next(&l); err == nil; k, err = iter.Next(&l) {
+		datastore.Delete(ds.cxt, k)
+	}
+
+	// Delete the stats.
+	skey := datastore.NewKey(ds.cxt, statsKind, "", urls.ShortToInt(id), nil)
+	datastore.Delete(ds.cxt, skey)
 
 	return datastore.Delete(ds.cxt, key)
 }
@@ -86,18 +97,25 @@ func (ds *DataStore) PutURL(u *urls.URL) (string, error) {
 	return u.Short, nil
 }
 
-// TODO GetStatistics
-func (ds *DataStore) GetStatistics(short string) (*Statistics, error) {
-	stats := urls.NewStatistics(short)
+// I guess these things need to be stored as a struct.
+type statData struct {
+	Data []byte
+}
 
-	data := make([]byte, 0)
+func (ds *DataStore) GetStatistics(id string) (*urls.Statistics, error) {
+	stats := urls.NewStatistics(id)
+
+	s := statData{Data: []byte{}}
+
 	key := datastore.NewKey(ds.cxt, statsKind, "", urls.ShortToInt(id), nil)
-	err := datastore.Get(ds.cxt, key, &data)
-	if err != nil {
+	err := datastore.Get(ds.cxt, key, &s)
+	if err == datastore.ErrNoSuchEntity {
+		return nil, urls.ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(data, stats)
+	err = json.Unmarshal(s.Data, stats)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +123,7 @@ func (ds *DataStore) GetStatistics(short string) (*Statistics, error) {
 	return stats, nil
 }
 
-// TODO PutStatistics
-func (ds *DataStore) PutStatistics(stats *Statistics) error {
+func (ds *DataStore) PutStatistics(stats *urls.Statistics) error {
 	// Not sure how to do maps in datastore, so I'm simply doing a json
 	// encoded value.
 	data, err := json.Marshal(stats)
@@ -114,10 +131,11 @@ func (ds *DataStore) PutStatistics(stats *Statistics) error {
 		return err
 	}
 
-	key := datastore.NewKey(ds.cxt, statKind, "",
-		urls.ShortToInt(stat.Short), nil)
+	key := datastore.NewKey(ds.cxt, statsKind, "",
+		urls.ShortToInt(stats.Short), nil)
 
-	_, err := datastore.Put(ds.cxt, key, data)
+	s := statData{Data: data}
+	_, err = datastore.Put(ds.cxt, key, &s)
 
 	return err
 }
@@ -132,12 +150,14 @@ func (ds *DataStore) LogClick(l *urls.Log) error {
 	return err
 }
 
-func (ds *DataStore) CountLogs() (int, error) {
-	q := datastore.NewQuery(logKind)
+func (ds *DataStore) CountLogs(id string) (int, error) {
+	pkey := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
+
+	q := datastore.NewQuery(logKind).Ancestor(pkey)
 	return q.Count(ds.cxt)
 }
 
-func (ds *DataStore) GetLogs(id string, limit, offset int) ([]*urls.URL,
+func (ds *DataStore) GetLogs(id string, limit, offset int) ([]*urls.Log,
 	error) {
 
 	pkey := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
@@ -146,6 +166,6 @@ func (ds *DataStore) GetLogs(id string, limit, offset int) ([]*urls.URL,
 		Offset(offset).Limit(limit)
 
 	us := make([]*urls.Log, 0, limit)
-	_, err := q.GetAll(ds.cxt, *us)
+	_, err := q.GetAll(ds.cxt, &us)
 	return us, err
 }
