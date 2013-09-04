@@ -254,10 +254,12 @@ func updateStats(ds DataStore, url *URL, r *http.Request) {
 	// CreateStatistics but the code hasn't changed. If it does, we
 	// should probably start testing this.
 	stats, err := ds.GetStatistics(url.Short)
-	if err != nil {
+	if err == ErrNotFound {
+		stats = NewStatistics(url.Short)
+	} else if err != nil {
 		log.Printf(
-			"GetStatistics(%v) failed. Skipping update: %v",
-			url.Short, err)
+			"updateStats failed at GetStatistics. Skipping update: %v",
+			err)
 		return
 	}
 
@@ -305,8 +307,20 @@ func updateStats(ds DataStore, url *URL, r *http.Request) {
 	stats.LastUpdated = now
 
 	// Put the Url for the Clicks count.
-	ds.PutURL(url)
+	_, err = ds.PutURL(url)
+	if err != nil {
+		log.Printf(
+			"updateStats failed at PutURL. click update failed: %v",
+			err)
+		return
+	}
 
 	// Put the Statistics.
-	ds.PutStatistics(stats)
+	err = ds.PutStatistics(stats)
+	if err != nil {
+		log.Printf(
+			"updateStats failed at PutStatistics. stat update failed: %v",
+			err)
+		return
+	}
 }

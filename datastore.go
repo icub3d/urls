@@ -1,5 +1,16 @@
 package urls
 
+import (
+	"errors"
+)
+
+var (
+	// ErrNotFound is a special case for the datastore. If an item is
+	// not found, this should be returned. Some of the logic expects to
+	// see this for special cases.
+	ErrNotFound = errors.New("not found")
+)
+
 // DataStore is the interface that any backend datastore should
 // implement to be compatible with the handlers.
 type DataStore interface {
@@ -23,7 +34,8 @@ type DataStore interface {
 	// convert a unique integer to a representative string.
 	PutURL(url *URL) (string, error)
 
-	// Get the statistics for the given short id.
+	// Get the statistics for the given short id. If one isn't found, a
+	// blank one should be returned.
 	GetStatistics(short string) (*Statistics, error)
 
 	// Put the given statistics into the data store. If the short id
