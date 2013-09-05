@@ -30,6 +30,7 @@
 		<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
 
 		<!-- APP JS -->
+		<script src="/admin/Chart.min.js"></script>
 		<script src="/admin/main.js"></script>
 		<!-- APP JS -->
 
@@ -66,14 +67,16 @@
 			<div data-ng-controller="UrlsCtrl">
 				<div class="row">
 					<div class="col-md-6">
-						<form class="form-inline" role="form" id="newurl">
-							<div class="form-group">
+						<form class="form-inline" role="form" name="createform" id="createform">
+							<div class="form-group" id="LongGroup"
+									 data-ng-class="{'has-error': createform.Long.$invalid}">
 								<label class="sr-only" for="Long">URL</label>
-								<input type="url" class="form-control" 
-											 data-ng-model="url" id="Long" placeholder="URL">
+								<input type="url" class="form-control" required
+											 data-ng-model="newurl" id="Long" name="Long" placeholder="URL">
 							</div>
 							<button type="submit" data-ng-click="create()" 
-											class="btn btn-default">Shorten</button>
+											class="btn btn-primary" 
+											data-ng-disabled="createform.$invalid">Shorten</button>
 						</form>
 					</div>
 					<div class="col-md-6" id="pagination">
@@ -106,8 +109,8 @@
 								<td>{{url.Clicks}}</td>
 								<td>
 									<a type="button" class="btn btn-link" href="#/{{url.Short}}">Details</a>
-									<button type="button" class="btn btn-danger" 
-													data-ng-click="del(url.Short)">Delete</button>
+									<!-- <button type="button" class="btn btn-danger"  -->
+									<!-- 				data-ng-click="del(url.Short)">Delete</button> -->
 								</td>
 							</tr>
 						</tbody>
@@ -117,9 +120,74 @@
 		</script>
 
 		<script type="text/ng-template" id="partials/stats.html">
-			Stats go here!
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Clicks By Browser</h3>
+				</div>
+				<div class="row">
+					<div class="col-md-12 center">
+						<canvas id="browsers" width="600px" height="200px"></canvas>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Clicks By Referrer</h3>
+				</div>
+				<div class="row">
+					<div class="col-md-6 center">
+						<canvas id="referrers" width="200px" height="200px"></canvas>
+					</div>
+					<div class="col-md-6">
+						<ul class="list-group">
+							<li class="list-group-item" data-ng-repeat="r in referrers">
+								<span style="background-color: {{r.color}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+								<span class="badge pull-right">{{r.value}}</span>
+								{{r.name}}
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Clicks By Platform</h3>
+				</div>
+				<div class="row">
+					<div class="col-md-12 center">
+						<canvas id="platforms" width="600px" height="200px"></canvas>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Clicks By Country</h3>
+				</div>
+				<div class="row">
+					<div class="col-md-6 center">
+						<canvas id="countries" width="200px" height="200px"></canvas>
+					</div>
+					<div class="col-md-6">
+						<ul class="list-group">
+							<li class="list-group-item" data-ng-repeat="c in countries">
+								<span style="background-color: {{c.color}}">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+								<span class="badge pull-right">{{c.value}}</span>
+								{{c.name}}
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Clicks By Date</h3>
+				</div>
+				<div class="row">
+					<div class="col-md-12 center">
+						<canvas id="days" width="600px" height="200px"></canvas>
+					</div>
+				</div>
+			</div>
 		</script>
-		
-		
 	</body>
 </html>
