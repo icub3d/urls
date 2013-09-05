@@ -1,6 +1,8 @@
 gourl
 =====
 
+[![Build Status](https://drone.io/github.com/icub3d/urls/status.png)](https://drone.io/github.com/icub3d/urls/latest)
+
 A URL shortener framework written in Go.
 
 You can use this with Google's App Engine simply by using the gae
