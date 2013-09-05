@@ -79,7 +79,7 @@ type Statistics struct {
 	Platforms map[string]int
 
 	// A breakdown of the count by Hours. The string is of the form
-	// YYYYMMDDHH in 24 hours format.
+	// YYYYMMDDHHMM in 24 hours format.
 	Hours map[string]int
 }
 
