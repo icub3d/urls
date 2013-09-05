@@ -7,7 +7,8 @@ import (
 var (
 	// ErrNotFound is a special case for the datastore. If an item is
 	// not found, this should be returned. Some of the logic expects to
-	// see this for special cases.
+	// see this value and will handle a request differently if it gets
+	// it as opposed to another error.
 	ErrNotFound = errors.New("not found")
 )
 
@@ -17,8 +18,8 @@ type DataStore interface {
 	// Get the total count of Urls in the system.
 	CountURLs() (int, error)
 
-	// Get the next limit urls order by create date (newest first) and offset by the
-	// given offset.
+	// Get the next limit urls order by create date (newest first) and
+	// offset by the given offset.
 	GetURLs(limit, offset int) ([]*URL, error)
 
 	// Get the url with the given short id.
