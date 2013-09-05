@@ -1,14 +1,4 @@
 indexes:
-  - kind: URL
-    properties:
-      - name: Created
-        direction: asc
-
-  - kind: URL
-    properties:
-      - name: Created
-        direction: desc
-
   - kind: Log
     ancestor: yes
     properties:

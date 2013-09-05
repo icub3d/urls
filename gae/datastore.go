@@ -3,6 +3,7 @@ package gae
 import (
 	"appengine"
 	"appengine/datastore"
+	"appengine/memcache"
 	"encoding/json"
 	"github.com/icub3d/urls"
 )
@@ -44,14 +45,40 @@ func (ds *DataStore) GetURLs(limit, offset int) ([]*urls.URL, error) {
 }
 
 func (ds *DataStore) GetURL(id string) (*urls.URL, error) {
-	key := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
-
 	var u urls.URL
-	err := datastore.Get(ds.cxt, key, &u)
-	if err == datastore.ErrNoSuchEntity {
-		return nil, urls.ErrNotFound
-	} else if err != nil {
-		return nil, err
+
+	if item, err := memcache.Get(ds.cxt, id); err != nil {
+		// When we don't find one, we should get it from the datastore.
+		key := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
+
+		err := datastore.Get(ds.cxt, key, &u)
+		if err == datastore.ErrNoSuchEntity {
+			return nil, urls.ErrNotFound
+		} else if err != nil {
+			ds.cxt.Errorf("failed to get %v in datastore: %v", id, err)
+			return nil, err
+		}
+
+		// Try to save it to the datastore.
+		data, err := json.Marshal(u)
+		if err != nil {
+			return nil, err
+		}
+		item = &memcache.Item{
+			Key:   id,
+			Value: data,
+		}
+
+		if err := memcache.Set(ds.cxt, item); err != nil {
+			ds.cxt.Errorf("failed to set %v in memcache: %v", id, err)
+		}
+
+	} else {
+		// We got it from memcache.
+		err := json.Unmarshal(item.Value, &u)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &u, nil
