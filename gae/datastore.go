@@ -24,17 +24,20 @@ type DataStore struct {
 	cxt appengine.Context
 }
 
+// NewDataStore creates a new datastore with the given context.
 func NewDataStore(cxt appengine.Context) *DataStore {
 	return &DataStore{
 		cxt: cxt,
 	}
 }
 
+// CountURLs implements the urls.DataStore interface.
 func (ds *DataStore) CountURLs() (int, error) {
 	q := datastore.NewQuery(urlKind)
 	return q.Count(ds.cxt)
 }
 
+// GetURLs implements the urls.DataStore interface.
 func (ds *DataStore) GetURLs(limit, offset int) ([]*urls.URL, error) {
 	q := datastore.NewQuery(urlKind).Order("-Created").
 		Offset(offset).Limit(limit)
@@ -44,6 +47,7 @@ func (ds *DataStore) GetURLs(limit, offset int) ([]*urls.URL, error) {
 	return us, err
 }
 
+// GetURL implements the urls.DataStore interface.
 func (ds *DataStore) GetURL(id string) (*urls.URL, error) {
 	var u urls.URL
 
@@ -84,6 +88,7 @@ func (ds *DataStore) GetURL(id string) (*urls.URL, error) {
 	return &u, nil
 }
 
+// DeleteURL implements the urls.DataStore interface.
 func (ds *DataStore) DeleteURL(id string) error {
 	key := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
 
@@ -101,6 +106,7 @@ func (ds *DataStore) DeleteURL(id string) error {
 	return datastore.Delete(ds.cxt, key)
 }
 
+// PutURL implements the urls.DataStore interface.
 func (ds *DataStore) PutURL(u *urls.URL) (string, error) {
 
 	// We may need to create an ID.
@@ -129,6 +135,7 @@ type statData struct {
 	Data []byte
 }
 
+// GetStatistics implements the urls.DataStore interface.
 func (ds *DataStore) GetStatistics(id string) (*urls.Statistics, error) {
 	stats := urls.NewStatistics(id)
 
@@ -150,6 +157,7 @@ func (ds *DataStore) GetStatistics(id string) (*urls.Statistics, error) {
 	return stats, nil
 }
 
+// PutStatistics implements the urls.DataStore interface.
 func (ds *DataStore) PutStatistics(stats *urls.Statistics) error {
 	// Not sure how to do maps in datastore, so I'm simply doing a json
 	// encoded value.
@@ -167,6 +175,7 @@ func (ds *DataStore) PutStatistics(stats *urls.Statistics) error {
 	return err
 }
 
+// LogClick implements the urls.DataStore interface.
 func (ds *DataStore) LogClick(l *urls.Log) error {
 	pkey := datastore.NewKey(ds.cxt, urlKind, "",
 		urls.ShortToInt(l.Short), nil)
@@ -177,6 +186,7 @@ func (ds *DataStore) LogClick(l *urls.Log) error {
 	return err
 }
 
+// CountLogs implements the urls.DataStore interface.
 func (ds *DataStore) CountLogs(id string) (int, error) {
 	pkey := datastore.NewKey(ds.cxt, urlKind, "", urls.ShortToInt(id), nil)
 
@@ -184,6 +194,7 @@ func (ds *DataStore) CountLogs(id string) (int, error) {
 	return q.Count(ds.cxt)
 }
 
+// GetLogs implements the urls.DataStore interface.
 func (ds *DataStore) GetLogs(id string, limit, offset int) ([]*urls.Log,
 	error) {
 
