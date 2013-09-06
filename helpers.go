@@ -10,7 +10,7 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -107,7 +107,7 @@ func digit(i int64) string {
 
 // paramGetInt is a helper function that returns the integer value of the
 // query paramGetInt with the given key.
-func paramGetInt(q url.Values, key string) int {
+func paramGetInt(q neturl.Values, key string) int {
 	value := q.Get(key)
 	if value == "" {
 		return 0
@@ -126,7 +126,7 @@ func paramGetInt(q url.Values, key string) int {
 // they are not sane. Limit defaults to 20 and offset 0. If limit >
 // 100, limit will be set to 100. If values are negative, they are set
 // to their default.
-func getLimitOffset(q url.Values) (int, int) {
+func getLimitOffset(q neturl.Values) (int, int) {
 	// Get the query parameters.
 	limit := paramGetInt(q, "limit")
 	offset := paramGetInt(q, "offset")
@@ -290,6 +290,13 @@ func updateStats(ds DataStore, url *URL, r *http.Request) {
 	referrer := r.Header.Get("Referer")
 	if referrer == "" {
 		referrer = "Unknown"
+	} else {
+		u, err := neturl.Parse(referrer)
+		if err != nil {
+			referrer = "Unknown"
+		} else {
+			referrer = u.Host
+		}
 	}
 
 	browser, platform := parseUserAgent(r.Header.Get("User-Agent"))

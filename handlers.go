@@ -124,12 +124,10 @@ func DeleteURL(ds DataStore, w http.ResponseWriter, r *http.Request) {
 
 	err := ds.DeleteURL(id)
 	if err != nil {
-		if err != nil {
-			log.Printf("GetUrl(%v) failed with: %v", id, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("oops"))
-			return
-		}
+		log.Printf("GetUrl(%v) failed with: %v", id, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -181,12 +179,10 @@ func Redirect(ds DataStore, w http.ResponseWriter, r *http.Request) {
 	// Get the URL in question.
 	u, err := ds.GetURL(id)
 	if err != nil {
-		if err != nil {
-			log.Printf("GetUrl(%v) failed with: %v", id, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("oops"))
-			return
-		}
+		log.Printf("GetUrl(%v) failed with: %v", id, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("oops"))
+		return
 	}
 
 	// Check for nil.
