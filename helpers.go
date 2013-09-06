@@ -294,7 +294,7 @@ func updateStats(ds DataStore, url *URL, r *http.Request) {
 
 	browser, platform := parseUserAgent(r.Header.Get("User-Agent"))
 	country := determineCountry(r.RemoteAddr)
-	hour := fmt.Sprintf("%04d%02d%02d%02dd%02d",
+	hour := fmt.Sprintf("%04d%02d%02d%02d%02d",
 		now.Year(), now.Month(), now.Day(),
 		now.Hour(), now.Minute())
 
