@@ -190,9 +190,10 @@ function StatsCtrl($scope, $http, $routeParams) {
 				var days = {};
 				var max = 0;
 
+				console.log($scope.stats.Hours);
+
 				for (var prop in $scope.stats.Hours) {
 						var day = prop.substring(0,4) + "-" + prop.substring(4,6) + "-" + prop.substring(6,8);
-						keys.push(day);
 
 						if (day in days)
 								days[day] = days[day] + $scope.stats.Hours[prop];
@@ -200,8 +201,10 @@ function StatsCtrl($scope, $http, $routeParams) {
 								days[day] = $scope.stats.Hours[prop];
 
 				}
-				
+
 				for (var day in days) {
+						keys.push(day);
+
 						if (days[day] > max)
 								max = days[day];
 
